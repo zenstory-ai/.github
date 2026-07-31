@@ -1,12 +1,11 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/zenstory-ai/.github/main/profile/assets/zenstory-ai-mark.png" width="128" alt="ZenStory AI logo">
 
-  # ZenStory AI
+  # Building the open story stack
 
-  **Stories, shaped with AI.**  
-  面向创作者的开源叙事 AI 工具与 Agent Skills
+  **Write · Adapt · Produce**  
+  用 AI Agent 创作、改编与生产故事
 
-  [Website](https://zenstory.ai) · [Projects](#open-source-projects)
+  [zenstory.ai](https://zenstory.ai) · [Open-source projects](#open-source-projects)
 </div>
 
 ## What we build
