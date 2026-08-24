@@ -32,10 +32,6 @@ ZenStory AI builds open-source, agent-native tools for creating and adapting sto
 | [**novel-to-game**](https://github.com/zenstory-ai/novel-to-game) | Turning novels into playable games | Source-grounded agent skills that transform a story into a fully playable game. |
 | [**video-recap-skills**](https://github.com/zenstory-ai/video-recap-skills) | Producing narrated video recaps | An agent-driven workflow for clipping source videos and producing Chinese narration recaps. |
 
-All projects now live under the [`zenstory-ai`](https://github.com/zenstory-ai) organization. Existing links from the previous namespace continue to redirect here.
-
-所有项目现已统一迁移至 [`zenstory-ai`](https://github.com/zenstory-ai) 组织；旧命名空间链接仍会自动跳转到新的仓库地址。
-
 ## How the pieces fit together ｜ 项目关系
 
 - **Oh Story** provides the reusable fiction-writing workflow.
