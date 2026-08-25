@@ -1,5 +1,5 @@
-name: Bug report
-description: Report a reproducible problem in a ZenStory AI project
+name: Bug report / 缺陷反馈
+description: Report a reproducible problem / 反馈可复现的问题
 title: "[Bug]: "
 labels:
   - bug
@@ -7,46 +7,65 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a problem. Remove secrets, personal data, and unpublished content before submitting.
+        Thanks for helping improve the project. Please remove secrets, personal data, and unpublished content before submitting.
+
+        感谢反馈。提交前请移除密钥、个人信息和未公开内容。安全漏洞请勿通过公开 Issue 报告。
   - type: checkboxes
+    id: checks
     attributes:
-      label: Before submitting
+      label: Before submitting / 提交前确认
       options:
-        - label: I searched existing issues and did not find a duplicate.
+        - label: I searched existing issues and did not find a duplicate. / 我已搜索现有 Issue，未发现重复问题。
           required: true
-        - label: This is not a security vulnerability.
+        - label: This is not a security vulnerability. / 这不是安全漏洞。
           required: true
-  - type: textarea
+  - type: dropdown
+    id: area
     attributes:
-      label: What happened?
-      description: Describe the actual behavior and its impact.
+      label: Affected area / 影响范围
+      options:
+        - Skills or generated content / Skill 或生成内容
+        - CLI, scripts, or installation / CLI、脚本或安装
+        - Web UI / 网页界面
+        - API or service / API 或服务
+        - Documentation / 文档
+        - Other / 其他
     validations:
       required: true
   - type: textarea
+    id: actual
     attributes:
-      label: Expected behavior
-      description: What did you expect to happen?
+      label: What happened? / 实际发生了什么？
+      description: Describe the behavior and its impact. / 请描述实际表现及影响。
     validations:
       required: true
   - type: textarea
+    id: expected
     attributes:
-      label: Steps to reproduce
-      description: Provide the smallest reliable reproduction you can.
+      label: Expected behavior / 预期行为
+      description: What did you expect to happen? / 你原本期望发生什么？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      description: Provide the smallest reliable reproduction. / 请提供尽可能小且稳定的复现方式。
       placeholder: |
         1. ...
         2. ...
         3. ...
     validations:
       required: true
-  - type: input
-    attributes:
-      label: Version or commit
-      placeholder: v1.2.3 or commit SHA
   - type: textarea
+    id: environment
     attributes:
-      label: Environment
-      description: Include relevant OS, runtime, browser, model, and tool versions.
+      label: Version and environment / 版本与环境
+      description: Include the project version or commit, OS, runtime, browser, model, and relevant tool versions. / 请提供项目版本、系统、运行时、浏览器、模型及相关工具版本。
+    validations:
+      required: true
   - type: textarea
+    id: context
     attributes:
-      label: Additional context
-      description: Add sanitized logs, screenshots, or links if useful.
+      label: Additional context / 补充信息
+      description: Add sanitized logs, screenshots, or links if useful. / 可附上已脱敏的日志、截图或链接。

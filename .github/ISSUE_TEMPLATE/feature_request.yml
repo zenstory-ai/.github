@@ -1,32 +1,52 @@
-name: Feature request
-description: Propose an improvement to a ZenStory AI project
+name: Feature request / 功能建议
+description: Propose an improvement / 提议一项改进
 title: "[Feature]: "
 labels:
   - enhancement
 body:
-  - type: checkboxes
+  - type: markdown
     attributes:
-      label: Before submitting
+      value: |
+        Start with the user problem. A clear use case is more useful than a long implementation plan.
+
+        请先描述用户问题和使用场景，再讨论具体实现。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting / 提交前确认
       options:
-        - label: I searched existing issues and did not find an equivalent request.
+        - label: I searched existing issues and did not find an equivalent request. / 我已搜索现有 Issue，未发现相同建议。
           required: true
   - type: textarea
+    id: problem
     attributes:
-      label: Problem
-      description: What user problem or limitation should be addressed?
+      label: Problem or use case / 问题与使用场景
+      description: Who needs this, and what can they not do today? / 谁需要这个功能？目前遇到了什么限制？
     validations:
       required: true
   - type: textarea
+    id: outcome
     attributes:
-      label: Proposed solution
-      description: Describe the desired behavior, not only a particular implementation.
+      label: Desired outcome / 期望结果
+      description: Describe the behavior or outcome you want, independent of implementation. / 请描述期望的行为或结果，不必限定具体实现。
     validations:
       required: true
   - type: textarea
+    id: alternatives
     attributes:
-      label: Alternatives considered
-      description: What workarounds or alternative designs have you considered?
+      label: Alternatives considered / 已考虑的替代方案
+      description: What workarounds or alternative designs have you tried? / 你尝试过哪些替代方案或临时做法？
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Contribution / 参与实现
+      description: Would you be interested in helping implement this? / 你是否愿意参与实现？
+      options:
+        - Yes, I can open a pull request / 可以，我愿意提交 PR
+        - Maybe, with maintainer guidance / 在维护者指导下可以
+        - No, I am only proposing the idea / 暂时只提出建议
   - type: textarea
+    id: context
     attributes:
-      label: Additional context
-      description: Add examples, mockups, or related links if useful.
+      label: Additional context / 补充信息
+      description: Add examples, mockups, source material, or related links if useful. / 可附上示例、原型、来源材料或相关链接。
