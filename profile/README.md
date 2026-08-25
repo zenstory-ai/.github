@@ -4,46 +4,66 @@
 
 **Building the open story stack · 构建开放的 AI 故事创作生态**
 
-Write · Adapt · Produce ｜ 创作 · 改编 · 生产
+Create stories. Adapt them. Ship them.<br>
+让故事从灵感出发，走向小说、短剧、游戏与视频。
 
-[zenstory.ai](https://zenstory.ai) · [Explore the projects](#open-source-projects--开源项目) · [Build with us](#build-with-us--参与共建)
+[Website](https://zenstory.ai) · [Choose a project](#start-with-what-you-want-to-make--从目标开始) · [Contribute](#build-with-us--参与共建) · [Security](https://github.com/zenstory-ai/.github/security/policy)
+
+</div>
+
+## One ecosystem, distinct projects ｜ 一个生态，多种创作入口
+
+ZenStory AI is the umbrella for our open-source story tools. **Oh Story** is the
+fiction-writing skill family within that ecosystem; the established project
+names remain distinct so existing users, links, and workflows continue to work.
+
+**ZenStory AI 是组织与生态品牌，Oh Story 是其中的小说写作 skill 系列。**
+各项目保留已有名称与定位，同时共享安全规范、贡献流程与开放创作理念。
+
+We build practical, agent-native workflows that creators can inspect, adapt,
+and combine—from research and drafting to multi-format production.
+
+我们希望创作者始终掌握过程与作品：工作流可检查、可修改、可组合，而不是封闭的黑盒。
+
+## Start with what you want to make ｜ 从目标开始
+
+| I want to… ｜ 我想要… | Start here ｜ 从这里开始 | Format ｜ 形态 |
+| --- | --- | --- |
+| Write and organize a novel through conversation ｜ 在可视化工作台中对话写小说 | [**ZenStory**](https://github.com/zenstory-ai/zenstory) | Web workbench |
+| Research, outline, draft, revise, and create covers with an agent ｜ 用 Agent 完成长短篇网文全流程 | [**Oh Story**](https://github.com/zenstory-ai/oh-story-claudecode) | Agent skill pack |
+| Produce short dramas or motion comics ｜ 创作短剧与漫剧 | [**Drama Skills**](https://github.com/zenstory-ai/drama-skills) | Production skill suite |
+| Run novel and short-drama workflows through DSH ｜ 在 DSH 中编排小说与短剧工作流 | [**Oh Story DSH**](https://github.com/zenstory-ai/oh-story-dsh) | DSH plugin |
+| Turn a source novel into a playable game ｜ 把小说改编成可玩游戏 | [**Novel to Game**](https://github.com/zenstory-ai/novel-to-game) | Adaptation skill pack |
+| Turn source video into a narrated Chinese recap ｜ 把视频制作成中文解说成片 | [**Video Recap Skills**](https://github.com/zenstory-ai/video-recap-skills) | Video workflow |
+
+## How the pieces fit together ｜ 项目如何协作
+
+- **Create ｜ 创作** — ZenStory provides the conversation-first workbench;
+  Oh Story provides reusable fiction-writing workflows for coding agents.
+- **Adapt ｜ 改编** — Drama Skills, Novel to Game, and Video Recap Skills carry
+  source material into short drama, interactive, and video formats.
+- **Orchestrate ｜ 编排** — Oh Story DSH connects novel and drama capabilities
+  inside a DSH plugin workflow.
+
+Each repository can be used independently. Together, they form an open path
+from story creation to production across media.
+
+每个项目都可以独立使用；组合起来，则覆盖从故事创作到多媒介生产的完整路径。
+
+## Build with us ｜ 参与共建
+
+Choose the repository closest to your goal, try the project, and share a focused
+issue or pull request. Contributions in Chinese and English are equally welcome.
+
+请选择最符合目标的仓库开始体验。无论使用中文还是英文，都欢迎提交清晰、聚焦的 Issue 与 Pull Request。
+
+- [Contribution guide ｜ 贡献指南](https://github.com/zenstory-ai/.github/blob/main/CONTRIBUTING.md)
+- [Support guide ｜ 获取支持](https://github.com/zenstory-ai/.github/blob/main/SUPPORT.md)
+- [Code of Conduct ｜ 社区行为准则](https://github.com/zenstory-ai/.github/blob/main/CODE_OF_CONDUCT.md)
+- [Report a vulnerability ｜ 报告安全漏洞](https://github.com/zenstory-ai/.github/security/policy)
+
+<div align="center">
 
 Founded and maintained by [@worldwonderer](https://github.com/worldwonderer).
 
 </div>
-
-## What we build ｜ 我们在做什么
-
-ZenStory AI builds open-source, agent-native tools for creating and adapting stories—from the first idea to novels, games, short dramas, storyboards, and narrated videos.
-
-我们致力于构建开放、实用、可组合的叙事 AI 工作流，让创作者通过对话与 Agent 协作完成从灵感、写作到多媒介改编的完整过程。
-
-- **Story creation ｜ 故事创作** — research, outlining, drafting, revision, style refinement, and cover creation
-- **Story adaptation ｜ 故事改编** — transform narratives into games, short dramas, storyboards, images, and videos
-- **Agent-native workflows ｜ Agent 原生工作流** — reusable skills for Claude Code, Codex, and other coding agents
-- **Open source ｜ 开源共建** — transparent workflows that creators can inspect, adapt, and extend
-
-## Open-source projects ｜ 开源项目
-
-| Project | Best for | What it does |
-| --- | --- | --- |
-| [**oh-story-claudecode**](https://github.com/zenstory-ai/oh-story-claudecode) | Writing novels and web fiction | An all-in-one skill pack for market research, story analysis, outlining, writing, humanization, and cover creation. |
-| [**drama-skills**](https://github.com/zenstory-ai/drama-skills) | Creating short dramas and motion comics | A complete workflow covering scripts, assets, storyboards, image/video prompts, and independent review. |
-| [**oh-story-dsh**](https://github.com/zenstory-ai/oh-story-dsh) | Orchestrating story-production skills | A DSH plugin powered by Oh Story and Drama Skills for novel writing and short-drama production. |
-| [**zenstory**](https://github.com/zenstory-ai/zenstory) | Working in a visual writing workbench | An AI-agent-driven novel-writing workspace: chat to create, organize, and refine stories. |
-| [**novel-to-game**](https://github.com/zenstory-ai/novel-to-game) | Turning novels into playable games | Source-grounded agent skills that transform a story into a fully playable game. |
-| [**video-recap-skills**](https://github.com/zenstory-ai/video-recap-skills) | Producing narrated video recaps | An agent-driven workflow for clipping source videos and producing Chinese narration recaps. |
-
-## How the pieces fit together ｜ 项目关系
-
-- **Oh Story** provides the reusable fiction-writing workflow.
-- **Drama Skills** extends the workflow into short-drama and motion-comic production.
-- **Oh Story DSH** connects these capabilities through a DSH plugin.
-- **ZenStory** provides a conversation-first writing workbench.
-- **Novel to Game** and **Video Recap Skills** carry stories into interactive and video formats.
-
-## Build with us ｜ 参与共建
-
-Each project is a practical building block rather than a closed black box. Choose the repository closest to your workflow, try its skills or application, and open an issue or pull request when you find something worth improving.
-
-每个项目都希望成为可检查、可修改、可组合的创作组件。请选择最符合你需求的仓库开始体验；如果发现问题或有新的想法，欢迎在对应仓库提交 Issue 或 Pull Request。
