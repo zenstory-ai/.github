@@ -8,6 +8,8 @@ Write · Adapt · Produce ｜ 创作 · 改编 · 生产
 
 [zenstory.ai](https://zenstory.ai) · [Explore the projects](#open-source-projects--开源项目) · [Build with us](#build-with-us--参与共建)
 
+Founded and maintained by [@worldwonderer](https://github.com/worldwonderer).
+
 </div>
 
 ## What we build ｜ 我们在做什么
