@@ -11,19 +11,14 @@ Create stories. Adapt them. Ship them.<br>
 
 </div>
 
-## One ecosystem, distinct projects ｜ 一个生态，多种创作入口
+## Open tools for stories in every form ｜ 让故事走向更多形态
 
-ZenStory AI is the umbrella for our open-source story tools. **Oh Story** is the
-fiction-writing skill family within that ecosystem; the established project
-names remain distinct so existing users, links, and workflows continue to work.
+We build open-source, agent-native tools for creating and adapting stories—from
+fiction and short drama to games and video. Each project works on its own and
+can be combined into transparent, adaptable workflows.
 
-**ZenStory AI 是组织与生态品牌，Oh Story 是其中的小说写作 skill 系列。**
-各项目保留已有名称与定位，同时共享安全规范、贡献流程与开放创作理念。
-
-We build practical, agent-native workflows that creators can inspect, adapt,
-and combine—from research and drafting to multi-format production.
-
-我们希望创作者始终掌握过程与作品：工作流可检查、可修改、可组合，而不是封闭的黑盒。
+我们打造开源的 AI 故事创作工具，覆盖小说、短剧、游戏与视频。每个项目既可独立使用，
+也可自由组合成透明、可定制的创作工作流。
 
 ## Start with what you want to make ｜ 从目标开始
 
