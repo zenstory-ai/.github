@@ -31,7 +31,7 @@ hosts; the separate hosted writing workbench lives at [app.zenstory.ai](https://
 | Turn a source novel into a playable game ｜ 把小说改编成可玩游戏 | [**Novel to Game**](https://zenstory.ai/novel-to-game) · [source](https://github.com/zenstory-ai/novel-to-game) | Adaptation skill pack |
 | Turn source video into a narrated Chinese recap ｜ 把视频制作成中文解说成片 | [**Video Recap Skills**](https://zenstory.ai/video-recap) · [source](https://github.com/zenstory-ai/video-recap-skills) | Video workflow |
 
-## Practical guides ｜ 按创作任务找指南
+## Practical guides ｜ 创作指南
 
 Choose the question you need to solve now, not every tool in the stack. These
 bilingual guides use concrete examples and distinguish planning, generated
@@ -83,19 +83,51 @@ The Oh Story guides below describe its agent-host workflow, not features automat
 
 ## How the pieces fit together ｜ 项目如何协作
 
-- **Create ｜ 创作** — ZenStory provides the conversation-first workbench;
-  Oh Story provides reusable fiction-writing workflows for coding agents.
-- **Adapt ｜ 改编** — Drama Skills, Novel to Game, and Video Recap Skills carry
-  source material into short drama, interactive, and video formats.
-- **Orchestrate ｜ 编排** — Oh Story DSH brings novel, short-drama, game and video
-  skill packs into DeepSeek Harness as a community plugin, not a DeepSeek-affiliated product.
+Choose a creation environment first; add an adaptation tool only when you have
+material and a concrete next format. This is not a required six-tool pipeline.
 
-Each repository can be used independently. Together, they form an open path
-from story creation to production across media. These links do not imply shared
-accounts or automatic workspace synchronization; follow the destination project’s setup and import steps.
+先选创作环境；有了材料和明确的目标形态，再选择改编工具。不是六个项目必须依次跑完。
 
-每个项目都可以独立使用；组合起来，则覆盖从故事创作到多媒介生产的路径。
-跨项目使用时按目标项目说明交接材料，不要把这些入口理解为账户互通或工作区自动同步。
+- **Write ｜ 写作** — Use ZenStory's hosted workbench for browser-based writing,
+  or Oh Story's skill pack in a supported agent host. They are separate products,
+  not two interfaces to one automatically synchronized project.<br>
+  网页写作选 ZenStory 工作台；在 Agent 宿主中写作选 Oh Story。
+  二者是独立产品，不是同一工程自动同步的两个界面。
+- **Adapt ｜ 改编** — Pick the destination from the material you actually have:
+  Drama Skills and Novel to Game start from story material; Video Recap Skills
+  starts from an existing local video, not merely its synopsis.<br>
+  小说材料可进入 Drama Skills 或 Novel to Game；Video Recap Skills
+  从已有本地视频开始，不能只拿一段故事梗概当作源片。
+- **Choose a host ｜ 选择宿主** — Oh Story DSH provides novel, short-drama, game
+  and video workflows inside DeepSeek Harness as a community plugin. It is not
+  a DeepSeek-affiliated product or a shared account for the other projects.<br>
+  Oh Story DSH 是 DeepSeek Harness 内的社区插件，提供四类创作工作流；
+  不属于 DeepSeek 官方产品，也不是其他项目的通用账户。
+
+### What to hand over ｜ 下一步交什么材料
+
+| Material you have ｜ 手头材料 | Destination ｜ 目标项目 | First useful handoff and its limit ｜ 有用的交付与边界 |
+| --- | --- | --- |
+| Authorized novel text, established facts and allowed adaptation changes ｜ 有权改编的小说、既定事实与允许改动的范围 | [Drama Skills](https://zenstory.ai/drama-skills) | Plan episodes, draft a selected script, then prepare visual/shot documents as needed. Those documents are not generated images or a finished video. ｜ 先规划分集、试写指定剧本，再按需准备视觉与分镜文档；文档不等于已生成图片或成片。 |
+| Authorized story material and a bounded target experience ｜ 有权改编的故事与范围明确的目标体验 | [Novel to Game](https://zenstory.ai/novel-to-game) | Agree on the brief and design before building a candidate. A design file or a successful build alone does not establish playability in the target runtime. ｜ 先确定简报与设计，再构建候选版本；只有设计文件或构建成功，不等于已在目标环境中可玩。 |
+| An authorized local video with its picture and sound ｜ 有权处理、带画面与声音的本地视频 | [Video Recap Skills](https://zenstory.ai/video-recap) | Ground the script in evidence, then prepare narration and a recap through the configured workflow. An editable JianYing/CapCut draft is a separate export, not an automatic property of every MP4. ｜ 先依据视频证据写稿，再通过已配置流程配音与合成；可编辑剪映草稿是独立导出，不是任意 MP4 自带的能力。 |
+
+For example, if you have only a novel chapter, choose a script or game adaptation
+path first. A shot plan can guide later production, but it does not become source
+video for a recap until real media exists and you have permission to use it.
+
+例如只有小说的一章时，先选剧本或游戏改编路径。分镜可以指导后续制作，但在实际视频
+尚未产生、使用权限尚未明确之前，不能把它当成解说流程的源片。
+
+Each repository can be used independently. Follow the destination's setup and
+import steps, and hand over the source material plus the facts and constraints
+that must survive. These links do not promise shared accounts, automatic file or
+workspace synchronization, or transfer of every internal tracking state. Media
+and model services may need separate configuration and authorization.
+
+每个项目可独立使用。按目标项目说明配置与导入，交接源材料及必须保留的事实和约束；
+这些入口不承诺账户互通、文件或工作区自动同步，也不承诺完整迁移内部追踪状态。
+模型与媒体服务可能需要另行配置和授权。
 
 ## Build with us ｜ 参与共建
 
