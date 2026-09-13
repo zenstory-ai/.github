@@ -31,23 +31,55 @@ hosts; the separate hosted writing workbench lives at [app.zenstory.ai](https://
 | Turn a source novel into a playable game ｜ 把小说改编成可玩游戏 | [**Novel to Game**](https://zenstory.ai/novel-to-game) · [source](https://github.com/zenstory-ai/novel-to-game) | Adaptation skill pack |
 | Turn source video into a narrated Chinese recap ｜ 把视频制作成中文解说成片 | [**Video Recap Skills**](https://zenstory.ai/video-recap) · [source](https://github.com/zenstory-ai/video-recap-skills) | Video workflow |
 
-## Practical guides ｜ 创作指南
+## Practical guides ｜ 按创作任务找指南
 
-Start from the material you already have and the next thing you want to make.
-These bilingual guides explain the working steps, expected files and author decisions.
+Choose the question you need to solve now, not every tool in the stack. These
+bilingual guides use concrete examples and distinguish planning, generated
+artifacts and work that still needs the author's decision.
 
-从手头已有的材料和下一项创作任务出发。以下中英双语指南说明操作路径、产物和作者需要决定的事项。
+按眼前的问题选一条路径，不必把整套工具都装一遍。中英双语指南用具体示例区分规划、
+实际产物和仍需作者决定的事项。
 
-| Your next task ｜ 下一项任务 | Guide ｜ 指南 |
+**Prefer a browser? ｜ 只想在网页里写？** Start with the
+[web-writing quick start ｜ 网页写作入门](https://zenstory.ai/docs/getting-started/quick-start).
+To compare the hosted workbench, standalone Oh Story and the DSH plugin, read
+[which writing workflow fits? ｜ 三种写作路径怎么选](https://zenstory.ai/compare/writing-workflows).
+The Oh Story guides below describe its agent-host workflow, not features automatically shared by the web app.
+下面的 Oh Story 指南对应 Agent 宿主流程，不表示网页应用自动具备同样的能力。
+
+### Start writing or resume a manuscript ｜ 开始写，或接着已有书稿写
+
+| Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
 | --- | --- |
-| Understand writing skills without a programming background ｜ 分清提示词、写作 Skill、插件和宿主 | [Agent skills for writers ｜ 写作 Skill 入门](https://zenstory.ai/oh-story/agent-skills-for-writers) |
-| Continue an unfinished novel ｜ 已写十几章，整理人物与前史后续写 | [Import and continue ｜ 已有小说导入续写](https://zenstory.ai/oh-story/import-and-continue) |
-| Revise a formulaic passage without changing the story ｜ 保留故事事实，改掉套话和解释腔 | [Prose revision example ｜ 原创改稿前后对照](https://zenstory.ai/oh-story/revise-ai-prose) |
-| Choose a DeepSeek writing environment ｜ 分清普通聊天与 DSH 写作工作区 | [DeepSeek novel writing ｜ DeepSeek 写小说](https://zenstory.ai/dsh/deepseek-novel-writing) |
-| Adapt a novel into episode scripts and shots ｜ 从原著进入分集、剧本与分镜 | [Novel to short drama ｜ 小说改短剧](https://zenstory.ai/drama-skills/novel-to-short-drama) |
-| Make an interactive adaptation ｜ 从小说做一个范围可控的游戏候选版本 | [Novel-to-game quick start ｜ 小说改游戏入门](https://zenstory.ai/novel-to-game/quick-start) |
-| Build a Chinese narration from video evidence ｜ 从画面、对白进入中文解说与成片 | [Video-to-narration workflow ｜ 视频解说完整流程](https://zenstory.ai/video-recap/video-to-narration) |
-| Continue editing a generated recap ｜ 把已有解说时间线带入剪映继续剪辑 | [JianYing / CapCut draft export ｜ 剪映草稿导出](https://zenstory.ai/video-recap/capcut-draft) |
+| What is a writing skill, and which host does it need? ｜ 写作 Skill、提示词、插件与宿主怎么分？ | [Agent skills for writers ｜ 写作 Skill 入门](https://zenstory.ai/oh-story/agent-skills-for-writers) |
+| How do I bring an unfinished novel into a writing project? ｜ 已写十几章，怎样整理前史再续写？ | [Import and continue ｜ 已有小说导入续写](https://zenstory.ai/oh-story/import-and-continue) |
+| Is DeepSeek chat the same as a DSH writing workspace? ｜ 普通 DeepSeek 聊天和 DSH 写作工作区有什么区别？ | [DeepSeek novel writing ｜ DeepSeek 写小说](https://zenstory.ai/dsh/deepseek-novel-writing) |
+
+### Make the next chapter work ｜ 把下一章写扎实
+
+| Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
+| --- | --- |
+| How do I turn an outline into visible choices and consequences? ｜ 有章纲，却只会复述设定怎么办？ | [Outline to chapter ｜ 从章纲到章节](https://zenstory.ai/oh-story/outline-to-chapter) |
+| How do I carry knowledge, clues and unfinished promises into the next chapter? ｜ 怎样不忘承诺，也不让角色提前知道秘密？ | [Long-novel continuity ｜ 长篇连续性](https://zenstory.ai/oh-story/long-novel-continuity) |
+| How do I revise formulaic prose without changing the story? ｜ 怎样改套话，而不顺手改掉剧情？ | [Prose revision example ｜ 原创改稿前后对照](https://zenstory.ai/oh-story/revise-ai-prose) |
+| How do I keep my voice without copying another story's facts? ｜ 怎样保留自己的文风，而不是越改越像模板？ | [Preserve author voice ｜ 保留作者文风](https://zenstory.ai/oh-story/preserve-author-voice) |
+
+### Adapt a novel for viewing or playing ｜ 把小说改成可看、可玩的叙事
+
+| Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
+| --- | --- |
+| How does source prose become episode scripts and shots? ｜ 原著怎样进入分集、剧本与分镜？ | [Novel to short drama ｜ 小说改短剧](https://zenstory.ai/drama-skills/novel-to-short-drama) |
+| What stays fixed between shots, and what changes with the action? ｜ 角色身份、造型和手中道具怎样跨镜承接？ | [Character consistency ｜ 角色跨镜一致性](https://zenstory.ai/drama-skills/character-consistency) |
+| What does a small novel-to-game adaptation actually require? ｜ 从小说做一个范围可控的游戏候选版本，要准备什么？ | [Novel-to-game quick start ｜ 小说改游戏入门](https://zenstory.ai/novel-to-game/quick-start) |
+| How can a choice change later events instead of only its wording? ｜ 怎样让选择影响剧情和结局，而不只是换句台词？ | [Meaningful choices ｜ 有后果的互动选择](https://zenstory.ai/novel-to-game/meaningful-choices) |
+
+### Make a recap from an existing video ｜ 从已有视频制作解说
+
+| Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
+| --- | --- |
+| How do I build narration from visible and audible evidence? ｜ 怎样从画面、对白写出有依据的中文解说？ | [Video-to-narration workflow ｜ 视频解说完整流程](https://zenstory.ai/video-recap/video-to-narration) |
+| When should dialogue, action sound or a pause lead instead of narration? ｜ 什么时候保留原声，什么时候加旁白？ | [Original sound and narration ｜ 原声与旁白分工](https://zenstory.ai/video-recap/original-audio-and-narration) |
+| How do I take an existing recap timeline into an editor? ｜ 怎样把已有解说时间线带入剪映继续剪辑？ | [JianYing / CapCut draft export ｜ 剪映草稿导出](https://zenstory.ai/video-recap/capcut-draft) |
 
 ## How the pieces fit together ｜ 项目如何协作
 
