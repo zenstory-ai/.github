@@ -44,6 +44,15 @@ artifacts and work that still needs the author's decision.
 [web-writing quick start ｜ 网页写作入门](https://zenstory.ai/docs/getting-started/quick-start).
 To compare the hosted workbench, standalone Oh Story and the DSH plugin, read
 [which writing workflow fits? ｜ 三种写作路径怎么选](https://zenstory.ai/compare/writing-workflows).
+
+### Browser workbench questions ｜ 网页工作台问题
+
+| Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
+| --- | --- |
+| What belongs in the editable project summary, and how do I keep open ideas from becoming facts? ｜ 可编辑的项目摘要该写什么，怎样避免把待定想法写成事实？ | [AI Memory and context ｜ AI 记忆与上下文](https://zenstory.ai/docs/advanced/ai-memory) |
+| How do I turn a creative decision into a saved scene or chapter with a clear next step? ｜ 怎样把创作决定变成已保存、可接续的一场或一章？ | [Browser writing workflow ｜ 网页写作接续流程](https://zenstory.ai/docs/advanced/workflow-tips) |
+| How do I move from evidence in a reference passage to a different scene of my own? ｜ 怎样从参考原文的证据走到自己的不同场景，而不是换名照搬？ | [Material analysis ｜ 素材深度分析](https://zenstory.ai/docs/advanced/material-analysis) |
+
 The Oh Story guides below describe its agent-host workflow, not features automatically shared by the web app.
 下面的 Oh Story 指南对应 Agent 宿主流程，不表示网页应用自动具备同样的能力。
 
