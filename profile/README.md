@@ -66,12 +66,15 @@ The Oh Story guides below describe its agent-host workflow, not features automat
 | How do I revise formulaic prose without changing the story? ｜ 怎样改套话，而不顺手改掉剧情？ | [Prose revision example ｜ 原创改稿前后对照](https://zenstory.ai/oh-story/revise-ai-prose) |
 | How do I make character dialogue distinct without changing the plot? ｜ 怎样用目标、信息与关系区分人物对白，又不改掉剧情？ | [Distinct character dialogue ｜ 区分人物对白](https://zenstory.ai/oh-story/character-dialogue) |
 | How do I keep my voice without copying another story's facts? ｜ 怎样保留自己的文风，而不是越改越像模板？ | [Preserve author voice ｜ 保留作者文风](https://zenstory.ai/oh-story/preserve-author-voice) |
+| How do I learn a scene mechanism from fiction without copying its plot? ｜ 怎样从小说中学到可复用的写法，而不照搬剧情？ | [Learn from fiction ｜ 从原文证据到原创场景](https://zenstory.ai/oh-story/learn-from-fiction) |
+| How do I turn a character trait into a motivated choice with a real cost? ｜ 怎样把性格标签变成有动机、有代价的行动选择？ | [Character motivation ｜ 人物动机与选择](https://zenstory.ai/oh-story/character-motivation) |
 
 ### Adapt a novel for viewing or playing ｜ 把小说改成可看、可玩的叙事
 
 | Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
 | --- | --- |
 | How does source prose become episode scripts and shots? ｜ 原著怎样进入分集、剧本与分镜？ | [Novel to short drama ｜ 小说改短剧](https://zenstory.ai/drama-skills/novel-to-short-drama) |
+| How do I storyboard an accepted screenplay without changing its dialogue or ending? ｜ 已接受剧本怎样直接做分镜，又不偷改台词与结尾？ | [Script to storyboard ｜ 从已接受剧本到分镜](https://zenstory.ai/drama-skills/script-to-storyboard) |
 | What stays fixed between shots, and what changes with the action? ｜ 角色身份、造型和手中道具怎样跨镜承接？ | [Character consistency ｜ 角色跨镜一致性](https://zenstory.ai/drama-skills/character-consistency) |
 | What does a small novel-to-game adaptation actually require? ｜ 从小说做一个范围可控的游戏候选版本，要准备什么？ | [Novel-to-game quick start ｜ 小说改游戏入门](https://zenstory.ai/novel-to-game/quick-start) |
 | How can a choice change later events instead of only its wording? ｜ 怎样让选择影响剧情和结局，而不只是换句台词？ | [Meaningful choices ｜ 有后果的互动选择](https://zenstory.ai/novel-to-game/meaningful-choices) |
@@ -112,6 +115,7 @@ material and a concrete next format. This is not a required six-tool pipeline.
 | Material you have ｜ 手头材料 | Destination ｜ 目标项目 | First useful handoff and its limit ｜ 有用的交付与边界 |
 | --- | --- | --- |
 | Authorized novel text, established facts and allowed adaptation changes ｜ 有权改编的小说、既定事实与允许改动的范围 | [Drama Skills](https://zenstory.ai/drama-skills) | Plan episodes, draft a selected script, then prepare visual/shot documents as needed. Those documents are not generated images or a finished video. ｜ 先规划分集、试写指定剧本，再按需准备视觉与分镜文档；文档不等于已生成图片或成片。 |
+| An accepted screenplay and the visual facts its scenes need ｜ 已接受的剧本与场景所需的视觉事实 | [Drama Skills](https://zenstory.ai/drama-skills) | Enter storyboarding directly without restarting development. The storyboard and frozen-keyframe text guide later work; they are not generated images or video. ｜ 不必重启开发，可直接进入分镜；分镜与冻结关键帧文字用于指导后续工作，不等于已生成图片或视频。 |
 | Authorized story material and a bounded target experience ｜ 有权改编的故事与范围明确的目标体验 | [Novel to Game](https://zenstory.ai/novel-to-game) | Agree on the brief and design before building a candidate. A design file or a successful build alone does not establish playability in the target runtime. ｜ 先确定简报与设计，再构建候选版本；只有设计文件或构建成功，不等于已在目标环境中可玩。 |
 | An authorized local video with its picture and sound ｜ 有权处理、带画面与声音的本地视频 | [Video Recap Skills](https://zenstory.ai/video-recap) | Ground the script in evidence, then prepare narration and a recap through the configured workflow. An editable JianYing/CapCut draft is a separate export, not an automatic property of every MP4. ｜ 先依据视频证据写稿，再通过已配置流程配音与合成；可编辑剪映草稿是独立导出，不是任意 MP4 自带的能力。 |
 
