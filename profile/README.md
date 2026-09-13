@@ -52,6 +52,7 @@ The Oh Story guides below describe its agent-host workflow, not features automat
 | Your next question ｜ 眼前的问题 | Start here ｜ 对应指南 |
 | --- | --- |
 | What is a writing skill, and which host does it need? ｜ 写作 Skill、提示词、插件与宿主怎么分？ | [Agent skills for writers ｜ 写作 Skill 入门](https://zenstory.ai/oh-story/agent-skills-for-writers) |
+| How do I turn one premise into a complete short-story plan? ｜ 只有一个梗，怎样规划成有兑现的完整短篇？ | [Premise to short story ｜ 从梗到完整短篇](https://zenstory.ai/oh-story/short-story-from-idea) |
 | How do I bring an unfinished novel into a writing project? ｜ 已写十几章，怎样整理前史再续写？ | [Import and continue ｜ 已有小说导入续写](https://zenstory.ai/oh-story/import-and-continue) |
 | Is DeepSeek chat the same as a DSH writing workspace? ｜ 普通 DeepSeek 聊天和 DSH 写作工作区有什么区别？ | [DeepSeek novel writing ｜ DeepSeek 写小说](https://zenstory.ai/dsh/deepseek-novel-writing) |
 
@@ -61,7 +62,9 @@ The Oh Story guides below describe its agent-host workflow, not features automat
 | --- | --- |
 | How do I turn an outline into visible choices and consequences? ｜ 有章纲，却只会复述设定怎么办？ | [Outline to chapter ｜ 从章纲到章节](https://zenstory.ai/oh-story/outline-to-chapter) |
 | How do I carry knowledge, clues and unfinished promises into the next chapter? ｜ 怎样不忘承诺，也不让角色提前知道秘密？ | [Long-novel continuity ｜ 长篇连续性](https://zenstory.ai/oh-story/long-novel-continuity) |
+| Which review comments should I act on, clarify or reject? ｜ 审稿意见太多，哪些该改、补问或拒绝？ | [Evidence-based revision decisions ｜ 有依据的改稿决策](https://zenstory.ai/oh-story/review-and-revise) |
 | How do I revise formulaic prose without changing the story? ｜ 怎样改套话，而不顺手改掉剧情？ | [Prose revision example ｜ 原创改稿前后对照](https://zenstory.ai/oh-story/revise-ai-prose) |
+| How do I make character dialogue distinct without changing the plot? ｜ 怎样用目标、信息与关系区分人物对白，又不改掉剧情？ | [Distinct character dialogue ｜ 区分人物对白](https://zenstory.ai/oh-story/character-dialogue) |
 | How do I keep my voice without copying another story's facts? ｜ 怎样保留自己的文风，而不是越改越像模板？ | [Preserve author voice ｜ 保留作者文风](https://zenstory.ai/oh-story/preserve-author-voice) |
 
 ### Adapt a novel for viewing or playing ｜ 把小说改成可看、可玩的叙事
