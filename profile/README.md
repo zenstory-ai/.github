@@ -42,9 +42,11 @@ These bilingual guides explain the working steps, expected files and author deci
 | --- | --- |
 | Understand writing skills without a programming background ｜ 分清提示词、写作 Skill、插件和宿主 | [Agent skills for writers ｜ 写作 Skill 入门](https://zenstory.ai/oh-story/agent-skills-for-writers) |
 | Continue an unfinished novel ｜ 已写十几章，整理人物与前史后续写 | [Import and continue ｜ 已有小说导入续写](https://zenstory.ai/oh-story/import-and-continue) |
+| Revise a formulaic passage without changing the story ｜ 保留故事事实，改掉套话和解释腔 | [Prose revision example ｜ 原创改稿前后对照](https://zenstory.ai/oh-story/revise-ai-prose) |
 | Choose a DeepSeek writing environment ｜ 分清普通聊天与 DSH 写作工作区 | [DeepSeek novel writing ｜ DeepSeek 写小说](https://zenstory.ai/dsh/deepseek-novel-writing) |
 | Adapt a novel into episode scripts and shots ｜ 从原著进入分集、剧本与分镜 | [Novel to short drama ｜ 小说改短剧](https://zenstory.ai/drama-skills/novel-to-short-drama) |
 | Make an interactive adaptation ｜ 从小说做一个范围可控的游戏候选版本 | [Novel-to-game quick start ｜ 小说改游戏入门](https://zenstory.ai/novel-to-game/quick-start) |
+| Build a Chinese narration from video evidence ｜ 从画面、对白进入中文解说与成片 | [Video-to-narration workflow ｜ 视频解说完整流程](https://zenstory.ai/video-recap/video-to-narration) |
 | Continue editing a generated recap ｜ 把已有解说时间线带入剪映继续剪辑 | [JianYing / CapCut draft export ｜ 剪映草稿导出](https://zenstory.ai/video-recap/capcut-draft) |
 
 ## How the pieces fit together ｜ 项目如何协作
