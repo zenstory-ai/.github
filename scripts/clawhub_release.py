@@ -114,7 +114,7 @@ def package(root:Path,s):
             if f.is_dir(): continue
             p=PurePosixPath(f.relative_to(base).as_posix())
             if secret(p): raise PolicyError(f"unsafe publish file {s['path']}/{p}")
-            if any(part.startswith(".") for part in p.parts) or "node_modules" in p.parts:
+            if any(part.startswith(".") for part in p.parts) or "node_modules" in p.parts or "__pycache__" in p.parts or p.suffix.lower() in {".pyc",".pyo"}:
                 continue
             cursor=base
             for part in p.parts:

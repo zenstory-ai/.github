@@ -19,6 +19,8 @@ class Tests(unittest.TestCase):
  def test_schema_and_license(self):r.validate_manifest(self.m,self.root);self.assertEqual(["LICENSE","SKILL.md","x.py"],[x["path"] for x in r.package(self.root,self.m["skills"][0])])
  def test_cli_hidden_paths_are_not_packaged(self):
   (self.root/"skills/a/.gitkeep").write_text("");d=self.root/"skills/a/node_modules";d.mkdir();(d/"x.js").write_text("x");self.assertNotIn(".gitkeep",[x["path"] for x in r.package(self.root,self.m["skills"][0])]);self.assertNotIn("node_modules/x.js",[x["path"] for x in r.package(self.root,self.m["skills"][0])])
+ def test_python_cache_files_do_not_change_package_digest(self):
+  skill=self.m["skills"][0];before=r.inventory_digest(r.package(self.root,skill));cache=self.root/"skills/a/scripts/__pycache__";cache.mkdir(parents=True);(cache/"worker.cpython-314.pyc").write_bytes(b"generated");(self.root/"skills/a/loose.pyc").write_bytes(b"generated");(self.root/"skills/a/optimized.pyo").write_bytes(b"generated");after_files=r.package(self.root,skill);self.assertEqual(before,r.inventory_digest(after_files));self.assertFalse(any("__pycache__" in x["path"] or x["path"].endswith((".pyc",".pyo")) for x in after_files));r.validate_manifest(self.m,self.root)
  def test_unclassified(self):
   d=self.root/"skills/b";d.mkdir();(d/"SKILL.md").write_text("b")
   with self.assertRaisesRegex(r.PolicyError,"unclassified"):r.validate_manifest(self.m,self.root)
