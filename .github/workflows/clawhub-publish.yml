@@ -74,6 +74,7 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ inputs.source_ref }}
           path: source
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout immutable reviewed policy manifest
@@ -118,13 +119,25 @@ jobs:
       - name: Install pinned ClawHub CLI
         run: npm install --global clawhub@0.23.3
 
-      - name: Validate and plan exact packages
+      - name: Validate exact packages offline
+        if: ${{ inputs.mode == 'validate' }}
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          clawhub --cli-version | grep -F '0.23.3'
+          args=(python3 control/scripts/clawhub_release.py validate --manifest "source/$MANIFEST_PATH" --repo-root source --clawhub-bin "$(command -v clawhub)" --output clawhub-inventory.json)
+          if [[ -n "$BASE_REF" ]]; then args+=(--base-ref "$BASE_REF"); fi
+          "${args[@]}"
+
+      - name: Plan against public ClawHub state
+        if: ${{ inputs.mode != 'validate' }}
         env:
           MANIFEST_PATH: ${{ inputs.manifest_path }}
         run: |
           set -euo pipefail
           clawhub --cli-version | grep -F '0.23.3'
-          python3 control/scripts/clawhub_release.py validate --manifest "policy/$MANIFEST_PATH" --repo-root source
           python3 control/scripts/clawhub_release.py plan --manifest "policy/$MANIFEST_PATH" --repo-root source --output clawhub-plan.json --clawhub-bin "$(command -v clawhub)"
 
       - name: Publish exact plan
@@ -159,6 +172,7 @@ jobs:
         with:
           name: clawhub-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            clawhub-inventory.json
             clawhub-plan.json
             clawhub-report.json
             clawhub-verify.json

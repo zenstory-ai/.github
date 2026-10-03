@@ -20,6 +20,10 @@ Call `.github/workflows/clawhub-publish.yml` at a **full commit SHA**. Inputs ar
 
 Writer concurrency belongs only to each product caller. The reusable workflow deliberately has no concurrency group, so nested reusable jobs cannot self-lock and token-free validation cannot occupy a writer slot.
 
+`mode: validate` is deliberately offline after installing the pinned CLI. It performs schema, catalog, rights, path, license, dependency, and package-digest checks, then imports `dist/skills.js` relative to the resolved `clawhub@0.23.3` executable to compare the SDK's complete `{path,size,sha256}` inventory with the canonical staged package. It does not call the registry, authenticate, or execute skill code. When a pull-request base SHA is available, the validator reads the prior manifest with `git show`; changing package bytes, display name, categories, or topics without changing the skill version fails. A missing base manifest is allowed for the first rollout.
+
+Bootstrap, release, and reconcile modes—including their dry runs—remain remote fail-closed plans. They retain owner, exact-version content, public scan/moderation, metadata, and remote-ahead checks; remote failures are never caught or converted into a skipped validation.
+
 The caller repository must be a `canonical-public` entry in `clawhub-sources.json`. The workflow never runs product code and never passes `--migrate-owner`.
 
 Writer authentication is isolated to a mode-0600 config under `runner.temp`, because `clawhub@0.23.3` does not read `CLAWHUB_TOKEN` directly. The config is created from the masked environment without putting the token in process arguments; `clawhub whoami` verifies it before writing. An EXIT trap removes the config before any artifact upload. The token is never printed or included in reports.
@@ -43,7 +47,7 @@ Catalog categories/topics are sent for a new item or when the public API proves 
 ## Local commands
 
 ```sh
-python3 scripts/clawhub_release.py validate --manifest .clawhub/publish.json --repo-root .
+python3 scripts/clawhub_release.py validate --manifest .clawhub/publish.json --repo-root . --clawhub-bin "$(command -v clawhub)" --base-ref "$BASE_SHA" --output inventory.json
 python3 scripts/clawhub_release.py lock --manifest .clawhub/publish.json --repo-root .
 python3 scripts/clawhub_release.py plan --manifest .clawhub/publish.json --repo-root . --output plan.json --clawhub-bin "$(command -v clawhub)"
 python3 scripts/clawhub_release.py publish --manifest .clawhub/publish.json --repo-root . --plan plan.json --report report.json --clawhub-bin "$(command -v clawhub)"
@@ -52,3 +56,5 @@ python3 scripts/clawhub_release.py audit --catalog clawhub-sources.json --output
 ```
 
 `publish` re-hashes the manifest and every package before each run. Matching public owner/version/content is a verified no-op; explicit `--version` is never invoked until the resolve/version checks show a missing target version. `pending-publication` and `submitted` remain pending, not verified.
+
+Anonymous registry reads retry at most three total attempts for timeouts, network failures, HTTP 429, and 5xx responses. Numeric or HTTP-date `Retry-After` is honored with a 30-second cap; otherwise delays are 1 and 2 seconds. Authentication/authorization failures, malformed JSON, owner conflicts, and content/version blockers are not retried or converted into success.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fail-closed ZenStory ClawHub release controller (standard library only)."""
 from __future__ import annotations
-import argparse, datetime as dt, hashlib, json, os, re, shutil, subprocess, sys, tempfile, time
+import argparse, datetime as dt, email.utils, hashlib, json, os, re, shutil, subprocess, sys, tempfile, time
 from pathlib import Path, PurePosixPath
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -152,16 +152,103 @@ def stage(files,target):
         if x.get("bytes") is not None:d.write_bytes(x["bytes"])
         else:shutil.copyfile(x["source"],d)
 
+def sdk_inventories(clawhub_bin,packages):
+    cli_path=Path(clawhub_bin).resolve(strict=True);module=cli_path.parent.parent/"dist"/"skills.js"
+    if cli_path.name not in {"clawdhub.js","clawhub.js"} or not module.is_file():raise PolicyError(f"cannot locate pinned clawhub SDK relative to {cli_path}")
+    node=shutil.which("node")
+    if not node:raise PolicyError("node is required for pinned clawhub SDK validation")
+    script="""import {pathToFileURL} from 'node:url';
+const sdk=await import(pathToFileURL(process.argv[1]).href);
+const results=[];
+for (const root of process.argv.slice(2)) { const files=await sdk.listSkillFiles(root); results.push(sdk.hashSkillFiles(files)); }
+process.stdout.write(JSON.stringify(results));"""
+    with tempfile.TemporaryDirectory(prefix="clawhub-offline-") as td:
+        roots=[]
+        for index,files in enumerate(packages):
+            root=Path(td)/str(index);root.mkdir();stage(files,root);roots.append(str(root))
+        proc=subprocess.run([node,"--input-type=module","-e",script,str(module),*roots],text=True,capture_output=True)
+    if proc.returncode:raise PolicyError(f"pinned clawhub SDK inventory failed: {(proc.stdout+proc.stderr)[-1000:]}")
+    try:observed_all=json.loads(proc.stdout)
+    except json.JSONDecodeError as e:raise PolicyError(f"pinned clawhub SDK returned invalid JSON: {e}") from e
+    if not isinstance(observed_all,list) or len(observed_all)!=len(packages):raise PolicyError("pinned clawhub SDK inventory result count invalid")
+    results=[]
+    for files,observed in zip(packages,observed_all):
+        sdk_files=observed.get("files") if isinstance(observed,dict) else None
+        if not isinstance(sdk_files,list) or not re.fullmatch(r"[0-9a-f]{64}",str(observed.get("fingerprint",""))):raise PolicyError("pinned clawhub SDK inventory contract invalid")
+        expected=sorted(({"path":x["path"],"sha256":x["sha256"],"size":x["size"]} for x in files),key=lambda x:x["path"])
+        actual=sorted(({"path":x.get("path"),"sha256":x.get("sha256"),"size":x.get("size")} for x in sdk_files),key=lambda x:str(x["path"]))
+        if actual!=expected:raise PolicyError("pinned clawhub SDK file inventory differs from canonical package")
+        results.append({"fingerprint":observed["fingerprint"],"files":actual,"packageDigest":inventory_digest(actual)})
+    return results
+def sdk_inventory(clawhub_bin,files):return sdk_inventories(clawhub_bin,[files])[0]
+
+def compare_base_manifest(current,previous):
+    if previous is None:return
+    old={(x.get("publisher"),x.get("slug")):x for x in previous.get("skills",[]) if isinstance(x,dict)}
+    for skill in current["skills"]:
+        before=old.get((skill["publisher"],skill["slug"]))
+        if not before or before.get("version")!=skill["version"]:continue
+        changed=[]
+        for field in ("packageDigest","displayName","categories","topics"):
+            if before.get(field,[] if field in {"categories","topics"} else None)!=skill.get(field,[] if field in {"categories","topics"} else None):changed.append(field)
+        if changed:raise PolicyError(f"{skill['publisher']}/{skill['slug']} changed {', '.join(changed)} without a version bump")
+
+def base_manifest(repo_root,base_ref,manifest_relative):
+    if not base_ref:return None
+    if not SHA.fullmatch(base_ref):raise PolicyError("base-ref must be a full lowercase commit SHA")
+    exists=subprocess.run(["git","-C",str(repo_root),"cat-file","-e",f"{base_ref}^{{commit}}"],text=True,capture_output=True)
+    if exists.returncode:raise PolicyError(f"base-ref commit is unavailable: {base_ref}")
+    shown=subprocess.run(["git","-C",str(repo_root),"show",f"{base_ref}:{manifest_relative}"],text=True,capture_output=True)
+    if shown.returncode:return None
+    try:return json.loads(shown.stdout)
+    except json.JSONDecodeError as e:raise PolicyError(f"base manifest is invalid JSON: {e}") from e
+
+def offline_validation(manifest_path,repo_root,clawhub_bin=None,base_ref=None):
+    manifest=read(manifest_path);validate_manifest(manifest,repo_root)
+    if clawhub_bin:check_cli(clawhub_bin)
+    if base_ref:
+        try:manifest_relative=manifest_path.resolve().relative_to(repo_root.resolve()).as_posix()
+        except ValueError as e:raise PolicyError("manifest must be inside repo-root when base-ref is supplied") from e
+        compare_base_manifest(manifest,base_manifest(repo_root,base_ref,manifest_relative))
+    evidence=[];prepared=[]
+    for skill in manifest["skills"]:
+        item={"publisher":skill["publisher"],"slug":skill["slug"],"version":skill["version"],"disposition":skill["disposition"]}
+        if skill["disposition"]=="publish":
+            files=package(repo_root,skill);item.update(packageDigest=inventory_digest(files),fileCount=len(files));prepared.append((item,files))
+        evidence.append(item)
+    if clawhub_bin:
+        for (item,_),sdk in zip(prepared,sdk_inventories(clawhub_bin,[files for _,files in prepared])):item.update(sdk=sdk)
+    return {"schemaVersion":SCHEMA,"repository":manifest["repository"],"sourceSha":git_head(repo_root),"baseRef":base_ref,"offline":True,"cliVersion":CLI_VERSION if clawhub_bin else None,"skills":evidence}
+
 class Registry:
     def __init__(self,base=None): self.base=(base or os.getenv("CLAWHUB_REGISTRY_URL") or REGISTRY).rstrip("/")
+    @staticmethod
+    def retry_delay(headers,attempt):
+        value=headers.get("Retry-After") if headers else None
+        if value:
+            try: delay=float(value)
+            except ValueError:
+                try: delay=(email.utils.parsedate_to_datetime(value)-dt.datetime.now(dt.timezone.utc)).total_seconds()
+                except (TypeError,ValueError,OverflowError): delay=2**attempt
+        else:delay=2**attempt
+        return max(0.0,min(delay,30.0))
     def get(self,path,q):
         req=Request(self.base+path+"?"+urlencode(q),headers={"Accept":"application/json","User-Agent":"zenstory-clawhub-controller/1"})
-        try:
-            with urlopen(req,timeout=20) as r:return json.loads(r.read().decode())
-        except HTTPError as e:
-            if e.code==404:return None
-            raise RemoteError(f"HTTP {e.code} from ClawHub") from e
-        except (URLError,TimeoutError,json.JSONDecodeError) as e: raise RemoteError(f"ClawHub read failed: {e}") from e
+        for attempt in range(3):
+            try:
+                with urlopen(req,timeout=20) as r:return json.loads(r.read().decode())
+            except HTTPError as e:
+                try:
+                    if e.code==404:return None
+                    if not (e.code==429 or 500<=e.code<=599) or attempt==2:raise RemoteError(f"HTTP {e.code} from ClawHub") from e
+                    delay=self.retry_delay(e.headers,attempt)
+                finally:e.close()
+                time.sleep(delay)
+            except (URLError,TimeoutError) as e:
+                if attempt==2:raise RemoteError(f"ClawHub read failed after 3 attempts: {e}") from e
+                time.sleep(self.retry_delay(None,attempt))
+            except json.JSONDecodeError as e:raise RemoteError(f"ClawHub returned invalid JSON: {e}") from e
+        raise AssertionError("unreachable")
     def resolve(self,p,s,h): return self.get("/api/v1/resolve",{"slug":s,"ownerHandle":p,"hash":h})
     def skill(self,p,s): return self.get(f"/api/v1/skills/{s}",{"ownerHandle":p})
     def version(self,p,s,v): return self.get(f"/api/v1/skills/{s}/versions/{v}",{"ownerHandle":p})
@@ -408,7 +495,7 @@ def audit(cp,reg):
 
 def parser():
     p=argparse.ArgumentParser();s=p.add_subparsers(dest="cmd",required=True)
-    v=s.add_parser("validate");v.add_argument("--manifest",type=Path,required=True);v.add_argument("--repo-root",type=Path,required=True);v.add_argument("--base-ref")
+    v=s.add_parser("validate");v.add_argument("--manifest",type=Path,required=True);v.add_argument("--repo-root",type=Path,required=True);v.add_argument("--base-ref");v.add_argument("--clawhub-bin");v.add_argument("--output",type=Path)
     q=s.add_parser("plan");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--output",type=Path,required=True);q.add_argument("--clawhub-bin")
     q=s.add_parser("publish");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--plan",type=Path,required=True);q.add_argument("--report",type=Path,required=True);q.add_argument("--clawhub-bin",required=True)
     q=s.add_parser("verify");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--report",type=Path,required=True);q.add_argument("--clawhub-bin")
@@ -418,7 +505,11 @@ def parser():
 def main(argv=None):
     a=parser().parse_args(argv)
     try:
-        if a.cmd=="validate":m=read(a.manifest);validate_manifest(m,a.repo_root.resolve());print(json.dumps({"ok":True,"repository":m["repository"]}));return 0
+        if a.cmd=="validate":
+            value=offline_validation(a.manifest,a.repo_root.resolve(),a.clawhub_bin,a.base_ref)
+            if a.output:write(a.output,value)
+            else:print(json.dumps(value,sort_keys=True))
+            return 0
         reg=Registry()
         if a.cmd=="plan":
             value=make_plan(a.manifest,a.repo_root.resolve(),reg,a.clawhub_bin);write(a.output,value)
