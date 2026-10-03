@@ -73,3 +73,7 @@ wrong/fork/failed CI identities, missing/skipped matrix jobs, newest failed runs
 Tests and PR validation perform no public writes or provider calls. A new real
 tagged publish is a separate release operation; a successful dry-run is not proof
 that npm/hosting/ClawHub publication executed.
+
+The caller binds all four control identities: reusable workflow `uses`,
+`with.control_ref`, the handoff checkout `ref`, and its `--control-ref` argument.
+A missing, duplicate, non-full-SHA, or mismatched identity blocks the contract.

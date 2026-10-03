@@ -113,10 +113,16 @@ class SourceReleaseTests(unittest.TestCase):
     def test_internal_plugin_symlinks_are_preserved(self):
         (self.root / ".agents").mkdir()
         (self.root / ".agents/skills").symlink_to("../skills")
+        (self.root / ".agents/notes").mkdir()
+        (self.root / ".agents/notes/process.md").write_text("development note")
+        self.policy["excludePaths"] = [".agents/notes"]
+        self.policy["requiredPaths"].append(".agents/skills")
         self.commit()
         out = Path(self.tmp.name) / "internal-link"
         manifest = r.package_source(self.root, self.policy, self.sha, out)
         self.assertIn({"path": ".agents/skills", "type": "symlink", "target": "../skills"}, manifest["files"])
+        self.assertFalse(any(x["path"].startswith(".agents/notes") for x in manifest["files"]))
+        r.verify_candidate(out, self.policy["repository"], self.sha, "1.2.3")
         self.assertEqual(255, (out / manifest["archive"]["name"]).read_bytes()[9])
 
     def test_cyclic_internal_links_are_rejected(self):
@@ -228,6 +234,57 @@ class SourceReleaseTests(unittest.TestCase):
         api.tag_sha.return_value = "f" * 40
         with self.assertRaises(r.ReleaseError):
             r.dispatch_clawhub(api, self.policy["repository"], "v1.2.3", self.sha)
+
+    def test_all_four_control_refs_must_match(self):
+        pin = "a" * 40
+        caller = f"""jobs:
+  release:
+    uses: zenstory-ai/.github/.github/workflows/source-release.yml@{pin}
+    with:
+      control_ref: {pin}
+  clawhub-handoff:
+    steps:
+      - uses: actions/checkout@{'b' * 40}
+        with:
+          repository: zenstory-ai/.github
+          ref: {pin}
+          path: controls
+      - run: >-
+          python controls/scripts/source_release.py dispatch-clawhub
+          --tag v1.2.3 --control-ref {pin}
+"""
+        r.check_control_pins(caller, pin)
+        for position in range(4):
+            # Replace only the selected occurrence without changing the other three.
+            offset = [m.start() for m in re.finditer(pin, caller)][position]
+            bad = caller[:offset] + "c" * 40 + caller[offset + len(pin):]
+            with self.subTest(position=position), self.assertRaisesRegex(r.ReleaseError, "pins"):
+                r.check_control_pins(bad, pin)
+        with self.assertRaises(r.ReleaseError):
+            r.check_control_pins(caller, "ROOT_REPLACE")
+
+    def test_every_plugin_version_authority_is_checked(self):
+        import json
+        authorities = [(".zcode-plugin/plugin.json", "/version", {"version": "1.2.3"}),
+                       ("marketplace.json", "/plugins/0/version", {"plugins": [{"version": "1.2.3"}]}),
+                       ("reasonix-plugin.json", "/version", {"version": "1.2.3"})]
+        for path, pointer, value in authorities:
+            dest = self.root / path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(json.dumps(value))
+            self.policy["versionFiles"].append({"path": path, "format": "json", "pointer": pointer})
+            self.policy["requiredPaths"].append(path)
+        self.commit()
+        r.check_contract(self.root, self.policy, self.sha)
+        for path, pointer, value in authorities:
+            dest = self.root / path
+            original = dest.read_text()
+            dest.write_text(original.replace("1.2.3", "1.2.4"))
+            self.commit()
+            with self.subTest(path=path), self.assertRaisesRegex(r.ReleaseError, "version"):
+                r.check_contract(self.root, self.policy, self.sha)
+            dest.write_text(original)
+            self.commit()
 
     def test_workflow_pins_privilege_and_independent_artifact_identity(self):
         workflow = (P.parents[1] / ".github/workflows/source-release.yml").read_text()

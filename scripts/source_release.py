@@ -477,6 +477,20 @@ def load_policy(root, sha, path):
         raise ReleaseError("invalid source-bound release policy JSON") from e
 
 
+def check_control_pins(caller, expected):
+    """Bind both the reusable reader and write-capable handoff to one control SHA."""
+    if not SHA.fullmatch(expected):
+        raise ReleaseError("controls must be pinned to a full commit SHA")
+    identities = [
+        re.findall(r"^\s+uses: zenstory-ai/\.github/\.github/workflows/source-release\.yml@([0-9a-f]{40})\s*(?:#.*)?$", caller, re.M),
+        re.findall(r"^\s+control_ref: ([0-9a-f]{40})\s*(?:#.*)?$", caller, re.M),
+        re.findall(r"^\s+repository: zenstory-ai/\.github\s*\n\s+ref: ([0-9a-f]{40})\s*(?:#.*)?$", caller, re.M),
+        re.findall(r"--control-ref\s+([0-9a-f]{40})(?=\s|$)", caller),
+    ]
+    if any(identity != [expected] for identity in identities):
+        raise ReleaseError("reusable workflow/input/handoff checkout/CLI control pins disagree")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["check", "event", "ci-proof", "package", "publish", "verify-public", "dispatch-clawhub"])
@@ -503,13 +517,8 @@ def main(argv=None):
             raise ReleaseError("caller and policy repository disagree")
         version = check_contract(args.root, policy, args.sha, args.tag)
         if args.control_ref:
-            if not SHA.fullmatch(args.control_ref):
-                raise ReleaseError("controls must be pinned to a full commit SHA")
             caller = source_file(args.root, args.sha, ".github/workflows/release.yml").decode()
-            calls = re.findall(r"^\s+uses: zenstory-ai/\.github/\.github/workflows/source-release\.yml@([0-9a-f]{40})\s*(?:#.*)?$", caller, re.M)
-            controls = re.findall(r"^\s+control_ref: ([0-9a-f]{40})\s*(?:#.*)?$", caller, re.M)
-            if calls != [args.control_ref] or controls != [args.control_ref]:
-                raise ReleaseError("caller workflow/control checkout pins disagree")
+            check_control_pins(caller, args.control_ref)
         api = GitHub(os.getenv("GH_TOKEN"))
         result = {"repository": args.repository, "sourceSha": args.sha, "version": version, "tag": args.tag or f"v{version}"}
         if args.command == "ci-proof":
