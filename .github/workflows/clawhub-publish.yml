@@ -1,0 +1,182 @@
+name: Reusable ClawHub publish
+
+on:
+  workflow_call:
+    inputs:
+      source_ref:
+        description: Immutable full source commit SHA (stable release commit or bootstrapSha)
+        required: true
+        type: string
+      control_ref:
+        description: Full zenstory-ai/.github commit SHA matching the pinned reusable workflow
+        required: true
+        type: string
+      policy_ref:
+        description: Immutable full commit SHA containing the reviewed manifest policy
+        required: true
+        type: string
+      mode:
+        description: validate, bootstrap, release, or reconcile
+        required: true
+        type: string
+      manifest_path:
+        required: false
+        type: string
+        default: .clawhub/publish.json
+      dry_run:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      CLAWHUB_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  distribute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Validate immutable inputs
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+          MODE: ${{ inputs.mode }}
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          CONTROL_REF_INPUT: ${{ inputs.control_ref }}
+          POLICY_REF: ${{ inputs.policy_ref }}
+          JOB_CONTEXT_JSON: ${{ toJSON(job) }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'source_ref must be a full SHA' >&2; exit 2; }
+          [[ "$MODE" =~ ^(validate|bootstrap|release|reconcile)$ ]] || { echo 'invalid mode' >&2; exit 2; }
+          [[ "$MANIFEST_PATH" =~ ^[A-Za-z0-9._/-]+$ ]] && [[ "$MANIFEST_PATH" != /* ]] && [[ "$MANIFEST_PATH" != *..* ]] || { echo 'unsafe manifest_path' >&2; exit 2; }
+          [[ "$CONTROL_REF_INPUT" =~ ^[0-9a-f]{40}$ ]] || { echo 'control_ref must be a pinned full SHA' >&2; exit 2; }
+          [[ "$POLICY_REF" =~ ^[0-9a-f]{40}$ ]] || { echo 'policy_ref must be a full SHA' >&2; exit 2; }
+          JOB_WORKFLOW_REF="$(python3 -c 'import json,os; print(json.loads(os.environ["JOB_CONTEXT_JSON"]).get("workflow_ref", ""))')"
+          [[ "$JOB_WORKFLOW_REF" == *"@$CONTROL_REF_INPUT" ]] || { echo 'control_ref does not match called reusable workflow SHA' >&2; exit 2; }
+          if [[ "$MODE" == validate && "$POLICY_REF" != "$SOURCE_REF" ]]; then echo 'validate requires policy_ref=source_ref' >&2; exit 2; fi
+          if [[ "$MODE" != bootstrap && "$POLICY_REF" != "$SOURCE_REF" ]]; then echo 'non-bootstrap runs require policy_ref=source_ref' >&2; exit 2; fi
+          echo "CONTROL_REF=$CONTROL_REF_INPUT" >> "$GITHUB_ENV"
+
+      - name: Checkout pinned organization controls
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: zenstory-ai/.github
+          ref: ${{ env.CONTROL_REF }}
+          path: control
+          persist-credentials: false
+
+      - name: Checkout immutable product source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.source_ref }}
+          path: source
+          persist-credentials: false
+
+      - name: Checkout immutable reviewed policy manifest
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.policy_ref }}
+          path: policy
+          persist-credentials: false
+
+      - name: Enforce catalog and bootstrap policy
+        env:
+          REPOSITORY: ${{ github.repository }}
+          MODE: ${{ inputs.mode }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+          POLICY_REF: ${{ inputs.policy_ref }}
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, sys
+          catalog=json.load(open('control/clawhub-sources.json'))
+          allowed={x['repository'] for x in catalog['repositories'] if x.get('classification')=='canonical-public'}
+          if os.environ['REPOSITORY'] not in allowed: sys.exit('caller repository is not a canonical-public catalog entry')
+          manifest=json.load(open(pathlib.Path('policy')/os.environ['MANIFEST_PATH']))
+          if manifest.get('repository') != os.environ['REPOSITORY']: sys.exit('manifest repository mismatch')
+          if os.environ['MODE']=='bootstrap' and manifest.get('bootstrapSha') != os.environ['SOURCE_REF']: sys.exit('bootstrap must use the recorded bootstrapSha')
+          if os.environ['MODE']=='bootstrap' and os.environ['POLICY_REF'] != os.environ['SOURCE_REF'] and (pathlib.Path('source')/os.environ['MANIFEST_PATH']).exists():
+              sys.exit('bootstrap policy/source split is allowed only when bootstrap source lacks the manifest')
+          publishers=set(catalog.get('allowedPublishers',[]))
+          owned={(x['publisher'],x['slug']):(x['repository'],x['path']) for x in catalog.get('identities',[])}
+          if len(owned) != len(catalog.get('identities',[])): sys.exit('central identity catalog contains duplicates')
+          for skill in manifest.get('skills',[]):
+              if skill.get('disposition') != 'publish': continue
+              identity=(skill.get('publisher'),skill.get('slug'))
+              if identity[0] not in publishers or owned.get(identity) != (manifest['repository'],skill.get('path')):
+                  sys.exit(f'identity is not fixed to this repository/path: {identity}')
+          PY
+          test "$(git -C control rev-parse HEAD)" = "$CONTROL_REF"
+          echo "CLAWHUB_WORKFLOW_SHA=$(git -C control rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "CLAWHUB_POLICY_SHA=$(git -C policy rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Install pinned ClawHub CLI
+        run: npm install --global clawhub@0.23.3
+
+      - name: Validate and plan exact packages
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          clawhub --cli-version | grep -F '0.23.3'
+          python3 control/scripts/clawhub_release.py validate --manifest "policy/$MANIFEST_PATH" --repo-root source
+          python3 control/scripts/clawhub_release.py plan --manifest "policy/$MANIFEST_PATH" --repo-root source --output clawhub-plan.json --clawhub-bin "$(command -v clawhub)"
+
+      - name: Publish exact plan
+        if: ${{ !inputs.dry_run && inputs.mode != 'validate' }}
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          CLAWHUB_CONFIG_PATH: ${{ runner.temp }}/clawhub-writer-config.json
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          test -n "$CLAWHUB_TOKEN" || { echo 'CLAWHUB_TOKEN is required for a writer run' >&2; exit 2; }
+          umask 077
+          trap 'rm -f "$CLAWHUB_CONFIG_PATH"' EXIT
+          python3 - <<'PY'
+          import json, os, pathlib
+          path=pathlib.Path(os.environ['CLAWHUB_CONFIG_PATH'])
+          path.write_text(json.dumps({'registry':'https://clawhub.ai','token':os.environ['CLAWHUB_TOKEN']}), encoding='utf-8')
+          path.chmod(0o600)
+          PY
+          clawhub whoami >/dev/null
+          python3 control/scripts/clawhub_release.py publish --manifest "policy/$MANIFEST_PATH" --repo-root source --plan clawhub-plan.json --report clawhub-report.json --clawhub-bin "$(command -v clawhub)"
+
+      - name: Verify public packages and isolated companion closure
+        if: ${{ !inputs.dry_run && inputs.mode != 'validate' }}
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: python3 control/scripts/clawhub_release.py verify --manifest "policy/$MANIFEST_PATH" --repo-root source --report clawhub-verify.json --clawhub-bin "$(command -v clawhub)"
+
+      - name: Preserve plan and report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: clawhub-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            clawhub-plan.json
+            clawhub-report.json
+            clawhub-verify.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Summarize
+        if: ${{ always() }}
+        env:
+          SUMMARY_REPOSITORY: ${{ github.repository }}
+          SUMMARY_SOURCE: ${{ inputs.source_ref }}
+          SUMMARY_MODE: ${{ inputs.mode }}
+          SUMMARY_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          {
+            echo '## ClawHub distribution'
+            echo "- repository: \`$SUMMARY_REPOSITORY\`"
+            echo "- source: \`$SUMMARY_SOURCE\`"
+            echo "- mode: \`$SUMMARY_MODE\`"
+            echo "- dry run: \`$SUMMARY_DRY_RUN\`"
+          } >> "$GITHUB_STEP_SUMMARY"
