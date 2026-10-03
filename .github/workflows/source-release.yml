@@ -1,0 +1,142 @@
+name: Reusable public skill source release
+
+on:
+  workflow_call:
+    inputs:
+      control_ref:
+        description: Reviewed full SHA, identical to this reusable workflow pin
+        required: true
+        type: string
+      publish:
+        description: Only stable tag push may request publication
+        default: false
+        type: boolean
+    outputs:
+      source_sha:
+        value: ${{ jobs.build.outputs.source_sha }}
+      version:
+        value: ${{ jobs.build.outputs.version }}
+      tag:
+        value: ${{ jobs.build.outputs.tag }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Source release contract
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      checks: read
+    outputs:
+      source_sha: ${{ steps.contract.outputs.source_sha }}
+      version: ${{ steps.contract.outputs.version }}
+      tag: ${{ steps.contract.outputs.tag }}
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
+      archive_sha256: ${{ steps.package.outputs.archive_sha256 }}
+      manifest_sha256: ${{ steps.package.outputs.manifest_sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: zenstory-ai/.github
+          ref: ${{ inputs.control_ref }}
+          path: controls
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Enforce caller event boundary
+        env:
+          REQUESTED_PUBLISH: ${{ inputs.publish }}
+        run: python controls/scripts/source_release.py event --publish "$REQUESTED_PUBLISH"
+      - id: contract
+        name: Validate source-bound version and archive contract before packaging
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          CONTROL_REF: ${{ inputs.control_ref }}
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: >-
+          python controls/scripts/source_release.py check --root source
+          --control-ref "$CONTROL_REF" --tag "$RELEASE_TAG"
+      - name: Require successful exact protected-main CI (not latest main)
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: >-
+          python controls/scripts/source_release.py ci-proof --root source
+          --tag "$RELEASE_TAG" --output candidate/ci-proof.json
+      - name: Build and verify deterministic tracked source bundle
+        id: package
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: >-
+          python controls/scripts/source_release.py package --root source
+          --directory candidate --quiet
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        id: artifact
+        with:
+          name: source-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: candidate/
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Append-only GitHub source release
+    needs: build
+    if: inputs.publish && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.build.outputs.source_sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: zenstory-ai/.github
+          ref: ${{ inputs.control_ref }}
+          path: controls
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: candidate
+          merge-multiple: true
+      - name: Revalidate exact artifact contents, CI attempt and tag before writes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          CONTROL_REF: ${{ inputs.control_ref }}
+          EXPECTED_ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          EXPECTED_MANIFEST_SHA256: ${{ needs.build.outputs.manifest_sha256 }}
+        run: >-
+          python controls/scripts/source_release.py publish --root source
+          --directory candidate --control-ref "$CONTROL_REF" --tag "$RELEASE_TAG"
+      - name: Anonymous public asset bytes must match the candidate
+        env:
+          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+        run: >-
+          python controls/scripts/source_release.py verify-public --root source
+          --directory candidate --tag "$RELEASE_TAG"
