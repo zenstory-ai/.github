@@ -124,10 +124,15 @@ class Tests(unittest.TestCase):
   with self.assertRaisesRegex(r.PolicyError,"differs"):r.sdk_inventories(str(cli),[r.package(self.root,self.m["skills"][0])])
  def test_audit_verifies_locked_inventory_and_flags_drift_or_missing_lock(self):
   repo=self.m["repository"];sha="b"*40;catalog={"schemaVersion":1,"allowedPublishers":["worldwonderer"],"identities":[{"publisher":"worldwonderer","slug":"a","repository":repo,"path":"skills/a"}],"repositories":[{"repository":repo,"classification":"canonical-public","manifestUrl":"https://raw.example/manifest","callerWorkflow":".github/workflows/publish-clawhub.yml"}]};cp=self.root/"catalog.json";cp.write_text(json.dumps(catalog));files=r.package(self.root,self.m["skills"][0]);remote_files=[{k:x[k] for k in ("path","size","sha256")} for x in files];reg=Remote(meta={"owner":{"handle":"worldwonderer"}},version={"version":{"files":remote_files}})
-  caller=f"uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@{sha}\n  control_ref: {sha}\n"
+  caller=f"if grep -E -q '(uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@ROOT_REPLACE|control_ref: ROOT_REPLACE)$'; then exit 1; fi\n    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@{sha}\n  control_ref: {sha}\n"
   def fetched(url):return [] if "api.github.com" in url else self.m
   with mock.patch.object(r,"fetch",side_effect=fetched),mock.patch.object(r,"fetch_text",return_value=caller):out=r.audit(cp,reg)
   self.assertEqual(1,out["coverage"]["verified"]);self.assertEqual([],out["findings"])
+  good_caller=caller
+  for caller in (good_caller.replace(f"control_ref: {sha}","control_ref: "+"c"*40),good_caller+f"  control_ref: {sha}\n",good_caller.replace(f"yml@{sha}","yml@ROOT_REPLACE")):
+   with mock.patch.object(r,"fetch",side_effect=fetched),mock.patch.object(r,"fetch_text",return_value=caller):out=r.audit(cp,reg)
+   self.assertEqual("POLICY_DRIFT",out["findings"][0]["status"])
+  caller=good_caller
   reg.v["version"]["files"].append({"path":"extra.txt","size":1,"sha256":"e"*64})
   with mock.patch.object(r,"fetch",side_effect=fetched),mock.patch.object(r,"fetch_text",return_value=caller):out=r.audit(cp,reg)
   self.assertEqual("CONTENT_CONFLICT",out["findings"][0]["status"])
