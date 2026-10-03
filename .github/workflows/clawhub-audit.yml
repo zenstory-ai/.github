@@ -1,0 +1,51 @@
+name: ClawHub daily audit
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: clawhub-central-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run anonymous public audit
+        run: python3 scripts/clawhub_release.py audit --catalog clawhub-sources.json --output clawhub-audit.json
+      - name: Synchronize deduplicated trackers in this repository only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: zenstory-ai/.github
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          report=json.load(open('clawhub-audit.json'))
+          prefix='[ClawHub audit] '
+          current={prefix+x['key']:x for x in report['findings']}
+          raw=subprocess.run(['gh','issue','list','--repo',os.environ['GH_REPO'],'--state','open','--limit','1000','--json','number,title'],check=True,text=True,capture_output=True).stdout
+          opened={x['title']:x['number'] for x in json.loads(raw) if x['title'].startswith(prefix)}
+          for title,item in current.items():
+              body=f"Automated public-data audit finding.\n\n- Status: `{item['status']}`\n- Detail: {item.get('detail','')}\n\nThis tracker is scoped to `zenstory-ai/.github`; the central audit does not publish or modify product repositories."
+              if title in opened: subprocess.run(['gh','issue','edit',str(opened[title]),'--repo',os.environ['GH_REPO'],'--body',body],check=True)
+              else: subprocess.run(['gh','issue','create','--repo',os.environ['GH_REPO'],'--title',title,'--body',body],check=True)
+          for title,number in opened.items():
+              if title not in current: subprocess.run(['gh','issue','close',str(number),'--repo',os.environ['GH_REPO'],'--comment','Recovered in the latest public-data audit.'],check=True)
+          PY
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: clawhub-audit-${{ github.run_id }}
+          path: clawhub-audit.json
+          if-no-files-found: warn
+          retention-days: 30

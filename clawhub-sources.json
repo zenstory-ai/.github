@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "repositories": [
+    {
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "classification": "canonical-public",
+      "callerWorkflow": ".github/workflows/publish-clawhub.yml",
+      "manifestPath": ".clawhub/publish.json",
+      "manifestUrl": "https://raw.githubusercontent.com/zenstory-ai/oh-story-claudecode/main/.clawhub/publish.json"
+    },
+    {
+      "repository": "zenstory-ai/drama-skills",
+      "classification": "canonical-public",
+      "callerWorkflow": ".github/workflows/publish-clawhub.yml",
+      "manifestPath": ".clawhub/publish.json",
+      "manifestUrl": "https://raw.githubusercontent.com/zenstory-ai/drama-skills/main/.clawhub/publish.json"
+    },
+    {
+      "repository": "zenstory-ai/novel-to-game",
+      "classification": "canonical-public",
+      "callerWorkflow": ".github/workflows/publish-clawhub.yml",
+      "manifestPath": ".clawhub/publish.json",
+      "manifestUrl": "https://raw.githubusercontent.com/zenstory-ai/novel-to-game/main/.clawhub/publish.json"
+    },
+    {
+      "repository": "zenstory-ai/video-recap-skills",
+      "classification": "canonical-public",
+      "callerWorkflow": ".github/workflows/publish-clawhub.yml",
+      "manifestPath": ".clawhub/publish.json",
+      "manifestUrl": "https://raw.githubusercontent.com/zenstory-ai/video-recap-skills/main/.clawhub/publish.json"
+    },
+    {
+      "repository": "zenstory-ai/.github",
+      "classification": "internal-control"
+    },
+    {
+      "repository": "zenstory-ai/oh-story-dsh",
+      "classification": "vendored-mirror"
+    },
+    {
+      "repository": "zenstory-ai/zenstory",
+      "classification": "non-skill-product"
+    }
+  ],
+  "allowedPublishers": [
+    "worldwonderer"
+  ],
+  "identities": [
+    {
+      "publisher": "worldwonderer",
+      "slug": "game-art-direction",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/game-art-direction"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "game-build",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/game-build"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "game-concept",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/game-concept"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "game-qa",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/game-qa"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "game-world-design",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/game-world-design"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "novel-game-analyze",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/novel-game-analyze"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "novel-to-game",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/novel-to-game"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-assets",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-assets"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-develop",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-develop"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-edit",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-edit"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-image-prompts",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-image-prompts"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-novel-analyze",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-novel-analyze"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-produce",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-produce"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-review",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-review"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-storyboard",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-storyboard"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-video-prompts",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-video-prompts"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "short-drama-write",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-write"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-cover",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-cover"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-deslop",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-deslop"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-import",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-import"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-long-analyze",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-long-analyze"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-long-scan",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-long-scan"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-long-write",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-long-write"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-review",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-review"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-setup",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-setup"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-short-analyze",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-short-analyze"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-short-scan",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-short-scan"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "story-short-write",
+      "repository": "zenstory-ai/oh-story-claudecode",
+      "path": "skills/story-short-write"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-assemble",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-assemble"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-cut",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-cut"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-recap",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-recap"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-reference",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-reference"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-script",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-script"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-understanding",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-understanding"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "video-voiceover",
+      "repository": "zenstory-ai/video-recap-skills",
+      "path": "skills/video-voiceover"
+    }
+  ]
+}
