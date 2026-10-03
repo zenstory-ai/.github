@@ -454,8 +454,8 @@ def audit(cp,reg):
         workflow=src.get("callerWorkflow","")
         try:
             text=fetch_text(f"https://raw.githubusercontent.com/{repo}/main/{workflow}")
-            refs=re.findall(r"zenstory-ai/\.github/\.github/workflows/clawhub-publish\.yml@([0-9a-f]{40}|ROOT_REPLACE)",text)
-            controls=re.findall(r"control_ref:\s*([0-9a-f]{40}|ROOT_REPLACE)",text)
+            refs=re.findall(r"^[ \t]*uses:[ \t]*zenstory-ai/\.github/\.github/workflows/clawhub-publish\.yml@([0-9a-f]{40}|ROOT_REPLACE)[ \t]*$",text,re.M)
+            controls=re.findall(r"^[ \t]*control_ref:[ \t]*([0-9a-f]{40}|ROOT_REPLACE)[ \t]*$",text,re.M)
             if len(refs)!=1 or len(controls)!=1 or refs[0]!=controls[0] or refs[0]=="ROOT_REPLACE":
                 findings.append({"key":repo+":caller","status":"POLICY_DRIFT","detail":"caller must pin matching reusable/control_ref full SHA and approved CLI policy"})
         except Exception as e:findings.append({"key":repo+":caller","status":"UNKNOWN","detail":str(e)})
