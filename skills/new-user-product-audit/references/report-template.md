@@ -85,6 +85,7 @@ AI 味计数：<套话 n 处、总结式结尾 n 处……>
 - 使用的账号（不含密码）：<邮箱 / 昵称 / persona>
 - AI 消息消耗：<persona：n 条；合计 n 条>
 - 创建的内容：<项目名列表；已删除 / 保留并标注>
+- production 诊断账号：<邮箱列表；已删除（删除方式） / 仍保留——请团队把这些账号从增长、激活与留存指标中排除>
 - 日志：`logs/<persona>-console.txt`、`logs/<persona>-errors.txt`、`logs/<persona>-failed.txt`
 - 出声思考日志：`journal-<persona>.md`
 ````

@@ -11,11 +11,13 @@ license: MIT
 类型把一件完整的作品写出来，评判产品给出的信息与 AI 产出的质量。最终交付一份团队能直接
 据此排优先级的诊断报告。
 
-产品专属信息放在 `references/<产品>.md`，本文只写通用方法。参考文件：
+产品专属信息放在 `references/<产品>.md`（运行须知）与 `references/<产品>-facts.md`（产品事实），
+本文只写通用方法。参考文件：
 
 | 文件 | 何时读 |
 |---|---|
-| [references/zenstory.md](references/zenstory.md) | 开跑前只读「运行须知」；首轮体验结束后才读「产品事实」 |
+| [references/zenstory.md](references/zenstory.md) | 开跑前读：环境、访问方式、账号、安全边界 |
+| [references/zenstory-facts.md](references/zenstory-facts.md) | **首轮体验结束后才读**（产品事实，提前读会破坏首轮） |
 | [references/scenario-library.md](references/scenario-library.md) | 选创作任务时 |
 | [references/disposable-inbox.md](references/disposable-inbox.md) | 需要真实注册、收验证邮件时 |
 | [references/fiction-quality-rubric.md](references/fiction-quality-rubric.md) | 评判 AI 产出时 |
@@ -41,20 +43,36 @@ license: MIT
 的 snapshot → ref → 重新 snapshot 循环操作；没有它就用 Playwright 或宿主提供的其他浏览器工具，
 方法不变。
 
+**宿主的 shell 状态不会跨命令保留**（Claude Code 等 Agent 每次 Bash 调用都是新 shell）：
+`export`、变量和 `cd` 下一条命令就没了。所以运行目录只算一次、写成字面路径，persona 每条
+命令显式传。
+
+开跑时执行一次，记下它打印的路径：
+
 ```bash
-PRODUCT=zenstory TARGET=staging P=novelist            # 产品、环境、当前 persona 短名
-RUN=~/audit-runs/$(date +%Y%m%d-%H%M)-$PRODUCT-$TARGET # 运行目录，放在任何仓库之外
+RUN=~/audit-runs/$(date +%Y%m%d-%H%M)-zenstory-staging   # 末尾换成 <产品>-<环境>；放在任何仓库之外
 mkdir -p "$RUN"/shots "$RUN"/logs && chmod 700 "$RUN"
-export AGENT_BROWSER_SESSION=$P   # 每个 persona 一个独立会话（独立 cookie），等同每条命令加 --session $P
-agent-browser open "$URL"                             # URL 由操作者给定
-agent-browser snapshot -i                             # 拿 @eN refs；页面变了就重拍
-agent-browser screenshot "$RUN/shots/$P-01-landing.png"
-agent-browser console > "$RUN/logs/$P-console.txt"    # 每个阶段结束各收一次
-agent-browser errors  > "$RUN/logs/$P-errors.txt"
-agent-browser network requests --status 400-599 > "$RUN/logs/$P-failed.txt"
-agent-browser set viewport 390 844 2                  # 移动端那一轮（或 set device "iPhone 15 Pro"）
-agent-browser close                                   # 该 persona 结束时
+printf 'RUN=%s\nPRODUCT=zenstory\nTARGET=staging\n' "$RUN" > "$RUN/env.sh"
+echo "$RUN"                                              # 之后所有命令都用这个字面路径
 ```
+
+之后**每条命令**都先 source 这个文件（把下面的路径换成上一步打印的字面值），并给每条
+`agent-browser` 命令显式加 `--session <persona>`（每个 persona 一个独立浏览器会话、独立 cookie）：
+
+```bash
+. ~/audit-runs/20261008-1400-zenstory-staging/env.sh
+agent-browser --session novelist open "https://app.example.com"   # URL 由操作者给定
+agent-browser --session novelist snapshot -i                     # 拿 @eN refs；页面变了就重拍
+agent-browser --session novelist screenshot "$RUN/shots/novelist-01-landing.png"
+agent-browser --session novelist console > "$RUN/logs/novelist-console.txt"   # 每阶段结束各收一次
+agent-browser --session novelist errors  > "$RUN/logs/novelist-errors.txt"
+agent-browser --session novelist network requests --status 400-599 > "$RUN/logs/novelist-failed.txt"
+agent-browser --session novelist set viewport 390 844 2          # 移动端那一轮（或 set device "iPhone 15 Pro"）
+agent-browser --session novelist close                           # 该 persona 结束时
+```
+
+不要依赖 `export AGENT_BROWSER_SESSION=...`：它在下一条命令就失效，后续命令会落回默认会话，
+多个 persona 共享 cookie，隔离就没了。
 
 规则：
 
@@ -67,8 +85,9 @@ agent-browser close                                   # 该 persona 结束时
 
 ## 3. 角色与第一轮纪律
 
-**第一轮不许用内部知识。** 体验完之前不读代码、不读产品文档、不读 `references/<产品>.md`
-的「产品事实」部分；只凭页面上看得到的东西做判断。产品没说清楚的，就当用户也不知道。
+**第一轮不许用内部知识。** 体验完之前不读代码、不读产品文档、不读产品事实文件
+（ZenStory 为 [references/zenstory-facts.md](references/zenstory-facts.md)）；只凭页面上看得到的
+东西做判断。产品没说清楚的，就当用户也不知道。
 
 为每个 persona 写一段设定再开跑，例如：
 
@@ -86,7 +105,7 @@ agent-browser close                                   # 该 persona 结束时
 每一步打一个**摩擦分**：0 顺畅 / 1 小停顿 / 2 明显困惑但自己解决 / 3 卡住需要猜或求助 / 4 放弃。
 同时标记**惊喜时刻**（想继续用的瞬间）和**流失时刻**（想关掉页面的瞬间）。
 
-第一轮结束后才读产品事实，开**第二轮**核对：哪些困惑是产品确实没讲清，哪些是设计如此；
+第一轮结束后才读产品事实文件（`references/zenstory-facts.md`），开**第二轮**核对：哪些困惑是产品确实没讲清，哪些是设计如此；
 把核对结果写进报告的「事实与观点」区分里。
 
 ## 4. 账号
@@ -95,8 +114,9 @@ agent-browser close                                   # 该 persona 结束时
   [references/disposable-inbox.md](references/disposable-inbox.md)。
 - 账号命名一眼能看出是诊断账号：昵称 `audit-<persona>-<YYYYMMDD>`，项目名带 `[audit]` 前缀。
 - **绝不使用真实客户账号**，也不用自己的私人账号。
-- 凭据存到运行目录之外的 `~/.config/product-audit/<产品>-<环境>.json`，权限 `0600`；不进任何
-  仓库，不进报告（报告只写邮箱，不写密码）。
+- 凭据存到运行目录之外的 `~/.config/product-audit/<产品>-<环境>.json`，权限 `0600`，按 persona
+  分键**合并写入**（不要覆盖整个文件，否则前一个 persona 的凭据会丢）；不进任何仓库，不进报告
+  （报告只写邮箱，不写密码）。
 - staging 可以改用操作者提供的预验证测试账号文件；但「注册与验证」阶段就要标为“未覆盖”。
 - 撞到额度或付费墙：**先完整记录这次体验**（文案、是否解释清楚为什么被拦、升级路径几步、价格
   是否透明、能否返回继续），然后停在支付页之前。**任何情况都不付真钱。** 只有操作者提供测试
@@ -160,6 +180,8 @@ agent-browser close                                   # 该 persona 结束时
 - 不使用真实个人信息（姓名、手机、身份证、真实邮箱）；昵称与内容都用虚构的。
 - 不给客服、工单、反馈入口灌测试内容；确需验证反馈入口，只发一条并写明“产品诊断测试”。
 - 结束时清理或清楚标注创建的内容：删除测试项目，或保留但项目名带 `[audit]`，并在报告附录列出。
+- production 上注册的诊断账号会留在用户表里：能删就删（写明删除方式），删不了就在附录列出邮箱，
+  提醒团队从增长、激活、留存指标中排除。
 - 报告、日志、截图里不出现密码、令牌、cookie、验证链接；截图里有这些就打码或重截。
 
 ## 9. 交付
