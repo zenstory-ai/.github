@@ -9,6 +9,7 @@ belongs in that project's own repository; only cross-repository skills live here
 | Skill | 用途 |
 |---|---|
 | [`release-writing`](release-writing/) | 组织统一的发布写作标准：CHANGELOG 条目、切版本、GitHub release notes |
+| [`new-user-product-audit`](new-user-product-audit/) | 新用户产品诊断：扮演新用户操作真实浏览器试用产品、按内容类型真实创作，产出动线/指引/bug/产出质量诊断报告 |
 
 ## 安装 ｜ Install
 
