@@ -20,7 +20,3 @@ belongs in that project's own repository; only cross-repository skills live here
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 ln -s "$PWD/skills/release-writing" "${CODEX_HOME:-$HOME/.codex}/skills/release-writing"
 ```
-
-## 致谢 ｜ Acknowledgements
-
-- [LINUX DO - The New Ideal Community](https://linux.do) — 社区支持

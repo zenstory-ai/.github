@@ -64,10 +64,6 @@ issue or pull request. Contributions in Chinese and English are equally welcome.
 - [Code of Conduct ｜ 社区行为准则](https://github.com/zenstory-ai/.github/blob/main/CODE_OF_CONDUCT.md)
 - [Report a vulnerability ｜ 报告安全漏洞](https://github.com/zenstory-ai/.github/security/policy)
 
-## Acknowledgements ｜ 致谢
-
-- [LINUX DO - The New Ideal Community](https://linux.do) — community support ｜ 感谢社区的交流、反馈与支持
-
 <div align="center">
 
 Founded and maintained by [@worldwonderer](https://github.com/worldwonderer).
