@@ -10,6 +10,7 @@ belongs in that project's own repository; only cross-repository skills live here
 |---|---|
 | [`release-writing`](release-writing/) | 组织统一的发布写作标准：CHANGELOG 条目、切版本、GitHub release notes |
 | [`new-user-product-audit`](new-user-product-audit/) | 新用户产品诊断：扮演新用户操作真实浏览器试用产品、按内容类型真实创作，产出动线/指引/bug/产出质量诊断报告 |
+| [`no-black-box`](no-black-box/) | 不留黑箱的交接讲解：Agent 独立做完一段工作后，按固定的八步节奏把需求背景、落地方案、验证结果和未决事项讲给使用人，产出白话的单文件 HTML（方案说明、原材料导读、确认单） |
 
 ## 安装 ｜ Install
 
