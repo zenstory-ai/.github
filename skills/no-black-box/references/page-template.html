@@ -14,8 +14,9 @@
     .ours         解读与处理结果
     .toc          页内导航（每个 section 一个链接）
     .explain      单个事项的讲解卡，内部用 .step-t 做八步小标题；卡片前先放一个 .summary 结论框
-    .tag.ok/.wait/.no  状态标签：已完成 / 待确认 / 未做
+    .tag.ok/.wait/.no/.na  状态标签：已完成 / 待确认 / 未做 / 其他（排进下一版、不用改）
     .note         遗留问题、例外
+    figure.shot   源文件或系统截图；图片用 data: URI 内嵌，figcaption 写图注（文件、页、行或格、红框指什么）
     table         放在 .tablewrap 里，窄屏可横向滚动
   颜色只用下面的变量；改配色只改 :root 和两个深色块。
 */
@@ -81,6 +82,10 @@ pre.f { margin: 0; background: var(--code-bg); border-radius: 6px; padding: 8px 
 .explain h4 .no { display: inline-block; min-width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 50%; background: var(--accent); color: var(--paper); font-size: 13px; margin-right: 8px; }
 .step-t { font-weight: 600; font-size: 14px; color: var(--accent); margin-top: 2px; }
 .note { background: var(--warn-soft); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+figure.shot { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+figure.shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
+figure.shot .ph { border: 1px dashed var(--rule); border-radius: 6px; padding: 28px 14px; text-align: center; color: var(--muted); font-size: 13px; }
+figcaption { font-size: 13px; color: var(--muted); }
 .tablewrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
 th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--rule); }
@@ -90,6 +95,7 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: now
 .tag.ok { background: var(--accent-soft); color: var(--accent); }
 .tag.wait { background: var(--warn-soft); color: var(--warn); }
 .tag.no { background: var(--bad-soft); color: var(--bad); }
+.tag.na { background: var(--code-bg); color: var(--muted); }
 .muted { color: var(--muted); }
 @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
 </style>
@@ -98,33 +104,40 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: now
 <main>
 <header>
   <h1>（文档名）</h1>
-  <p>（一句话说明：这份文档讲什么、给谁看、怎么读。）</p>
+  <p>（一句话：这份文档讲什么；需要时加一句图例，如「左边米色框是原文，右边是解读」。）</p>
 </header>
 
+<!-- 章节顺序照 SKILL.md 第 3 节：结论 → 一页速览 → 先理解背景 → 源文件一览 → 每个事项 → 上线与验证 → 需要外部确认的事项 → 补充说明 → 未决与待商量 → 附录；没有的内容就删掉那一节 -->
 <nav class="toc" aria-label="目录">
+  <a href="#conclusion">结论</a>
   <a href="#overview">一页速览</a>
   <a href="#item-1">事项一</a>
 </nav>
 
+<section id="conclusion">
+  <h2>结论</h2>
+  <div class="summary">
+    <p>（做完了什么）</p>
+    <p>（影响多大：什么变了、什么不变）</p>
+    <p>（需要谁做什么）</p>
+  </div>
+</section>
+
 <section id="overview">
   <h2>一页速览</h2>
-  <div class="summary">
-    <p><b>做了什么：</b>（一句话）</p>
-    <p><b>最关键的结论：</b>（一句话）</p>
-    <p><b>影响：</b>（什么变了、什么不变）</p>
-  </div>
   <div class="tablewrap"><table>
-    <thead><tr><th>事项</th><th>一句话</th><th>状态</th></tr></thead>
+    <thead><tr><th>事项</th><th>来源原话</th><th>结果</th><th>状态</th></tr></thead>
     <tbody>
-      <tr><td>（事项一）</td><td>（做了什么）</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>（事项二）</td><td>（做了什么）</td><td><span class="tag wait">待确认</span></td></tr>
+      <tr><td>（事项一）</td><td>（「材料原话」）</td><td>（结果）</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td>（事项二）</td><td>（「材料原话」）</td><td>（结果）</td><td><span class="tag wait">待确认</span></td></tr>
     </tbody>
   </table></div>
+  <p class="muted">（条目很多时放按处理状态的条数表，合计等于总条数；没有就删掉）</p>
 </section>
 
 <section id="item-1">
   <h2>（材料名或事项名）<span class="file">（文件名）</span></h2>
-  <div class="summary">（这份材料是什么、谁写的、对应哪项工作。）</div>
+  <div class="summary">（结论：这份材料要求改什么、改成了什么、影响多大、状态 <span class="tag ok">已完成</span>；谁写的、对应哪项在「源文件一览」里写）</div>
 
   <div class="pair">
     <div class="orig"><span class="label">原文</span>
@@ -134,6 +147,12 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: now
       <ul><li>（怎么理解）</li><li>（怎么处理，状态 <span class="tag ok">已完成</span>）</li></ul>
     </div>
   </div>
+
+  <figure class="shot">
+    <!-- 真实截图用 <img src="data:image/png;base64,..." alt="（截图内容）">，不引用外部图片文件 -->
+    <div class="ph">（截图位置）</div>
+    <figcaption>（《文件名》「页名」第 N 行或单元格；红框指什么，红框是后加的标注）</figcaption>
+  </figure>
 
   <div class="summary">（结论框：这一项改了什么、影响多大、状态 <span class="tag ok">已完成</span>）</div>
   <div class="explain">
@@ -152,12 +171,12 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: now
     <div class="step-t">边界</div>
     <ul><li>（哪些没动、为什么）</li></ul>
     <div class="step-t">怎么落地</div>
-    <ul><li>（方法、规模、碰到的坑）</li></ul>
+    <ul><li>（规模和核对结果，用业务说法；文档会到外部的人手里时，副本数、改法、系统结构、改的过程中出过又已补上的错、提交号放进对话）</li></ul>
     <div class="step-t">影响</div>
     <p>（对谁有什么影响；什么不受影响）</p>
     <div class="step-t">和其他事项的关系</div>
     <ul><li>（关联的材料、确认项、后续工作）</li></ul>
-    <div class="note">（遗留问题、例外，或讲解时新发现的问题，标明「未核实」，并同步进未决事项；没有就删掉）</div>
+    <div class="note">（遗留问题、例外，或讲解时新发现的问题，标明「新发现，未核实」，并同步进「未决与待商量」；没有就删掉）</div>
   </div>
 </section>
 </main>
