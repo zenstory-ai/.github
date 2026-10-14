@@ -31,7 +31,10 @@
     },
     {
       "repository": "zenstory-ai/.github",
-      "classification": "internal-control"
+      "classification": "canonical-public",
+      "callerWorkflow": ".github/workflows/publish-skills.yml",
+      "manifestPath": ".clawhub/publish.json",
+      "manifestUrl": "https://raw.githubusercontent.com/zenstory-ai/.github/main/.clawhub/publish.json"
     },
     {
       "repository": "zenstory-ai/oh-story-dsh",
@@ -267,6 +270,30 @@
       "slug": "video-voiceover",
       "repository": "zenstory-ai/video-recap-skills",
       "path": "skills/video-voiceover"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "release-writing",
+      "repository": "zenstory-ai/.github",
+      "path": "skills/release-writing"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "new-user-product-audit",
+      "repository": "zenstory-ai/.github",
+      "path": "skills/new-user-product-audit"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "no-black-box",
+      "repository": "zenstory-ai/.github",
+      "path": "skills/no-black-box"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "prose-gap-polish",
+      "repository": "zenstory-ai/.github",
+      "path": "skills/prose-gap-polish"
     }
   ]
 }

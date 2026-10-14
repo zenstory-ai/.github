@@ -11,13 +11,21 @@ belongs in that project's own repository; only cross-repository skills live here
 | [`release-writing`](release-writing/) | 组织统一的发布写作标准：CHANGELOG 条目、切版本、GitHub release notes |
 | [`new-user-product-audit`](new-user-product-audit/) | 新用户产品诊断：扮演新用户操作真实浏览器试用产品、按内容类型真实创作，产出动线/指引/bug/产出质量诊断报告 |
 | [`no-black-box`](no-black-box/) | 不留黑箱的交接讲解：Agent 独立做完一段工作后，按固定的八步节奏把需求背景、落地方案、验证结果和未决事项讲给使用人，产出一份讲解文档（自己读，也能投屏、转给别人），有需要外部确认或拍板的事项时再加一份确认单，单文件 HTML 或在线文档；每个结论写明出处，源文件配截图 |
-| [`you-click-publish`](you-click-publish/) | 发帖辅助：按 x.com、linux.do 的习惯起草改写、做头图、算字数，在你已登录的浏览器里填好草稿；改稿和点发布始终由人来做，不是自动发帖 |
+| [`prose-gap-polish`](prose-gap-polish/) | 文案与方案精修：合并短碎句、去除自造词与防御性赘述、消除歧义，补齐信息断点并修复逻辑断点 |
 
 ## 安装 ｜ Install
 
-按你使用的 Agent 工具链接到对应的 skills 目录，例如：
+ClawHub 发布后可以按需安装单个 skill，例如：
+
+```bash
+clawhub install @worldwonderer/prose-gap-polish --version 1.0.0
+```
+
+也可以克隆本仓库，按你使用的 Agent 工具链接到对应的 skills 目录，例如：
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 ln -s "$PWD/skills/release-writing" "${CODEX_HOME:-$HOME/.codex}/skills/release-writing"
 ```
+
+四个共享 skill 的版本、文件清单和发布入口见 [`.clawhub/`](../.clawhub/)。
