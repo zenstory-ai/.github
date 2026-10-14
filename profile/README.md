@@ -7,7 +7,7 @@
 Create stories. Adapt them. Ship them.<br>
 让故事从灵感出发，走向小说、短剧、游戏与视频。
 
-[Website](https://zenstory.ai) · [中文站](https://zenstory.ai/zh) · [All projects](https://zenstory.ai/projects) · [Contribute](#build-with-us--参与共建)
+[Website](https://zenstory.ai) · [中文站](https://zenstory.ai/zh) · [All projects](https://zenstory.ai/projects) · [Sponsors](#sponsors--partners--赞助与合作) · [Contribute](#build-with-us--参与共建)
 
 </div>
 
@@ -51,6 +51,22 @@ Browser workbench docs ｜ 网页工作台文档: [zenstory.ai/docs](https://zen
   有了故事材料，用 Drama Skills 做剧本与分镜，或用 Novel to Game 做可玩版本；有了视频，用 Video Recap Skills 做解说成片。
 - **DeepSeek Harness** — Oh Story DSH is a community plugin that brings the novel, short-drama, game and video workflows into DeepSeek Harness.<br>
   Oh Story DSH 是社区插件，把小说、短剧、游戏与视频四类工作流带进 DeepSeek Harness。
+
+## Sponsors & Partners ｜ 赞助与合作
+
+We welcome support from language, image, and video model developers and API
+providers. API credits, model access, and financial sponsorship help us improve
+integrations, test creative workflows, and share examples with the community.
+
+Supporting partners are acknowledged in our organization profile and relevant
+project READMEs. For sponsorships and partnerships, contact
+[support@zenstory.ai](mailto:support@zenstory.ai).
+
+我们欢迎语言、图像和视频模型厂商及 API 服务商支持 ZenStory 的开源创作工具。调用额度、
+模型服务与资金赞助，将帮助我们完善模型接入、测试创作流程，并为社区提供更多公开示例。
+
+支持我们的伙伴将在组织主页及相关项目 README 中获得致谢与展示。赞助与合作请联系
+[support@zenstory.ai](mailto:support@zenstory.ai)。
 
 ## Build with us ｜ 参与共建
 
