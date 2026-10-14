@@ -15,9 +15,17 @@ belongs in that project's own repository; only cross-repository skills live here
 
 ## 安装 ｜ Install
 
-按你使用的 Agent 工具链接到对应的 skills 目录，例如：
+ClawHub 发布后可以按需安装单个 skill，例如：
+
+```bash
+clawhub install @worldwonderer/prose-gap-polish --version 1.0.0
+```
+
+也可以克隆本仓库，按你使用的 Agent 工具链接到对应的 skills 目录，例如：
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 ln -s "$PWD/skills/release-writing" "${CODEX_HOME:-$HOME/.codex}/skills/release-writing"
 ```
+
+四个共享 skill 的版本、文件清单和发布入口见 [`.clawhub/`](../.clawhub/)。

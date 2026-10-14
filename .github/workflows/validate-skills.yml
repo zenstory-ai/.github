@@ -1,0 +1,22 @@
+name: Validate shared ClawHub skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Shared skill inventory validation
+    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@06790406c89b285e60b9000e0cf7d7e181dcecba
+    with:
+      source_ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      policy_ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      control_ref: 06790406c89b285e60b9000e0cf7d7e181dcecba
+      mode: validate
+      manifest_path: .clawhub/publish.json
+      dry_run: true

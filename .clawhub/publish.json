@@ -1,0 +1,131 @@
+{
+  "bootstrapSha": "06790406c89b285e60b9000e0cf7d7e181dcecba",
+  "repository": "zenstory-ai/.github",
+  "schemaVersion": 1,
+  "skillRoots": [
+    "skills"
+  ],
+  "skills": [
+    {
+      "categories": [
+        "development",
+        "productivity"
+      ],
+      "displayName": "发布写作",
+      "disposition": "publish",
+      "excludeReason": "",
+      "include": [
+        "**/*"
+      ],
+      "maintainer": "worldwonderer",
+      "packageDigest": "eff911f803c5b49869e55ded8cc36cf235491efa2e4196cb8ca120b7cde5125e",
+      "path": "skills/release-writing",
+      "publisher": "worldwonderer",
+      "rebuildOn": [],
+      "rights": {
+        "evidence": ".clawhub/README.md#rights",
+        "status": "permission-recorded"
+      },
+      "runtimeDependsOn": [],
+      "slug": "release-writing",
+      "supportedRuntimes": [],
+      "topics": [
+        "release-notes",
+        "changelog",
+        "semver"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "categories": [
+        "research",
+        "productivity"
+      ],
+      "displayName": "新用户产品诊断",
+      "disposition": "publish",
+      "excludeReason": "",
+      "include": [
+        "**/*"
+      ],
+      "maintainer": "worldwonderer",
+      "packageDigest": "6c962148a5381eb246b0b843730ea2bd147e5317e7ec763419756396f1cc708a",
+      "path": "skills/new-user-product-audit",
+      "publisher": "worldwonderer",
+      "rebuildOn": [],
+      "rights": {
+        "evidence": ".clawhub/README.md#rights",
+        "status": "permission-recorded"
+      },
+      "runtimeDependsOn": [],
+      "slug": "new-user-product-audit",
+      "supportedRuntimes": [],
+      "topics": [
+        "product-audit",
+        "onboarding",
+        "user-testing"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "categories": [
+        "communication",
+        "knowledge"
+      ],
+      "displayName": "不留黑箱的交接讲解",
+      "disposition": "publish",
+      "excludeReason": "",
+      "include": [
+        "**/*"
+      ],
+      "maintainer": "worldwonderer",
+      "packageDigest": "3f4268d13b6833ddae7e883396703573697c1b2021d096f9fce01e23212b811f",
+      "path": "skills/no-black-box",
+      "publisher": "worldwonderer",
+      "rebuildOn": [],
+      "rights": {
+        "evidence": ".clawhub/README.md#rights",
+        "status": "permission-recorded"
+      },
+      "runtimeDependsOn": [],
+      "slug": "no-black-box",
+      "supportedRuntimes": [],
+      "topics": [
+        "handoff",
+        "documentation",
+        "knowledge-transfer"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "categories": [
+        "creative",
+        "productivity"
+      ],
+      "displayName": "文案与方案五步精修",
+      "disposition": "publish",
+      "excludeReason": "",
+      "include": [
+        "**/*"
+      ],
+      "maintainer": "worldwonderer",
+      "packageDigest": "1ddae2603ce11c441ea14d576083970c6928b829dcb7157a36e0d135d918e6d7",
+      "path": "skills/prose-gap-polish",
+      "publisher": "worldwonderer",
+      "rebuildOn": [],
+      "rights": {
+        "evidence": ".clawhub/README.md#rights",
+        "status": "permission-recorded"
+      },
+      "runtimeDependsOn": [],
+      "slug": "prose-gap-polish",
+      "supportedRuntimes": [],
+      "topics": [
+        "writing",
+        "prose-polish",
+        "clarity",
+        "logic-review"
+      ],
+      "version": "1.0.0"
+    }
+  ]
+}

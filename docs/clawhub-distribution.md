@@ -2,6 +2,12 @@
 
 ClawHub is a release channel, not a recursive mirror. Each canonical product repository owns one reviewed `.clawhub/publish.json`; this repository supplies the pinned reusable writer and an anonymous daily audit.
 
+This repository also publishes its own four shared skills through
+`.github/workflows/publish-skills.yml` and `.clawhub/publish.json`. The shared
+control scripts and community files are outside every skill package. See
+[the shared-skill release instructions](../.clawhub/README.md) for bootstrap,
+credentials, and later stable releases.
+
 ## Cold start and steady state
 
 The first rollout **does not wait for another release**. `mode: bootstrap` builds from the manifest's exact 40-character `bootstrapSha`, while the manifest itself is read from reviewed `main`. It performs the same owner, rights, package, version, fingerprint, scan, and public-read gates as later releases. It never publishes drifting `main`.
