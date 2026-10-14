@@ -18,7 +18,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "de1060ffcb78f69e8cb89e4c9448afe18ac37e61e7e18e1bade410d20b67980b",
+      "packageDigest": "96038ab36f9398d74b0cfbc648ff3e9efdb09ffb1cc5611b671c6136007f1bd8",
       "path": "skills/release-writing",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -48,7 +48,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "145b14a493cc0f5d52831b0a60318f8bb8b19078527c615acc98124c2efda611",
+      "packageDigest": "665c8f37e8756f5aa9e893d66c38567080dbbfdb3e08c11c63722aa42f95ab3b",
       "path": "skills/new-user-product-audit",
       "publisher": "worldwonderer",
       "rebuildOn": [],

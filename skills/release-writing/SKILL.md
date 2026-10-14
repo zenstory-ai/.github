@@ -65,8 +65,9 @@ push 到 main 触发的校验工作流，逐个查。不要用 `--branch main --
 `## [X.Y.Z] - YYYY-MM-DD`、补底部 compare 链接、在上方留一个新的空 Unreleased 节。
 
 **版本号与 CHANGELOG 同一提交改齐。** 仓库有 `.release/policy.json` 时，把其 `versionFiles` 列出的
-每一处（文本文件整份内容，或 JSON 文件里 `pointer` 指向的字段）都改成 `X.Y.Z`。漏一处，tag 推上去
-后发布工作流会以 `stable tag does not equal repository version` 拒发，而已推的 tag 不能删改。
+每一处（文本文件整份内容，或 JSON 文件里 `pointer` 指向的字段）都改成 `X.Y.Z`。漏改或改错，tag 推上去
+后发布工作流会拒发（多处不一致报 `repository version metadata disagrees`，全部未改报
+`stable tag does not equal repository version`），而已推的 tag 不能删改。
 没有这个文件的仓库按其发布文档改版本（如 oh-story-dsh 改根与包版本）。
 
 ### 阶段三：走 PR，不要直接推 main
@@ -175,10 +176,13 @@ CHANGELOG 是账本；改名导致的链接失效属于例外，那是修复失�
 
 ```bash
 OWNER=<owner>; REPO=<repo>
-OLD=<旧owner>/<旧repo>; NEW=$OWNER/$REPO   # 只改了组织名时：OLD=<旧owner>/; NEW=$OWNER/
+OLD=<旧owner>/<旧repo>; NEW=$OWNER/$REPO   # 只改了组织名时：OLD=<旧owner>; NEW=$OWNER
+OLD_RE=$(printf '%s' "$OLD" | sed 's/[].[*^$\\]/\\&/g')   # 转义正则元字符
+# 两侧须是名字以外的字符，oh-story-dsh、goldorg 这类同前缀的名字才不会被误改
+RE="s#(^|[^A-Za-z0-9_.-])${OLD_RE}([^A-Za-z0-9_-]|\$)#\1${NEW}\2#g"
 for t in $(gh release list --repo "$OWNER/$REPO" --limit 100 --json tagName --jq '.[].tagName'); do
   gh release view "$t" --repo "$OWNER/$REPO" --json body --jq '.body' > /tmp/b.txt
-  sed "s#$OLD#$NEW#g" /tmp/b.txt > /tmp/n.txt
+  sed -E -e "$RE" -e "$RE" /tmp/b.txt > /tmp/n.txt   # 跑两遍：只隔一个字符的相邻两处，第一遍会漏掉后一处
   cmp -s /tmp/b.txt /tmp/n.txt || { gh release edit "$t" --repo "$OWNER/$REPO" --notes-file /tmp/n.txt \
     && echo "$t 已修正"; }
 done
