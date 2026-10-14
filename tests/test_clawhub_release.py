@@ -16,6 +16,16 @@ class Tests(unittest.TestCase):
   self.m={"schemaVersion":1,"repository":"zenstory-ai/example","skillRoots":["skills"],"bootstrapSha":"a"*40,"skills":[{"path":"skills/a","slug":"a","publisher":"worldwonderer","version":"1.0.0","displayName":"A","disposition":"publish","excludeReason":"","maintainer":"@m","include":["**/*"],"rebuildOn":[],"runtimeDependsOn":[],"supportedRuntimes":[],"categories":["creative"],"topics":["fiction"],"rights":{"status":"permission-recorded","evidence":".clawhub/README.md"}}]}
   self.m["skills"][0]["packageDigest"]=r.inventory_digest(r.package(self.root,self.m["skills"][0]))
  def tearDown(self):self.t.cleanup()
+ def public_remote(self,scan=None):
+  s=self.m["skills"][0];files=r.package(self.root,s)
+  return Remote(meta={"owner":{"handle":s["publisher"]},"displayName":s["displayName"],"categories":s["categories"],"topics":s["topics"]},version={"version":{"files":[{k:x[k] for k in ("path","size","sha256")} for x in files]}},scan=scan)
+ def audit_report(self,reg):
+  s=self.m["skills"][0];repo=self.m["repository"];sha="b"*40;catalog={"schemaVersion":1,"allowedPublishers":[s["publisher"]],"identities":[{"publisher":s["publisher"],"slug":s["slug"],"repository":repo,"path":s["path"]}],"repositories":[{"repository":repo,"classification":"canonical-public","manifestUrl":"https://raw.example/manifest","callerWorkflow":".github/workflows/publish-clawhub.yml"}]};cp=self.root/"catalog.json";cp.write_text(json.dumps(catalog))
+  caller=f"    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@{sha}\n  control_ref: {sha}\n"
+  with mock.patch.object(r,"fetch",side_effect=lambda url:[] if "api.github.com" in url else self.m),mock.patch.object(r,"fetch_text",return_value=caller):return r.audit(cp,reg)
+ @staticmethod
+ def installed_package(args,**kwargs):
+  root=Path(args[args.index("--workdir")+1]);identity=args[args.index("install")+1];owner,slug=identity[1:].split("/");d=root/"skills"/f"@{owner}"/slug;d.mkdir(parents=True);(d/"SKILL.md").write_text("ok");return subprocess.CompletedProcess(args,0,"","")
  def test_schema_and_license(self):r.validate_manifest(self.m,self.root);self.assertEqual(["LICENSE","SKILL.md","x.py"],[x["path"] for x in r.package(self.root,self.m["skills"][0])])
  def test_cli_hidden_paths_are_not_packaged(self):
   (self.root/"skills/a/.gitkeep").write_text("");d=self.root/"skills/a/node_modules";d.mkdir();(d/"x.js").write_text("x");self.assertNotIn(".gitkeep",[x["path"] for x in r.package(self.root,self.m["skills"][0])]);self.assertNotIn("node_modules/x.js",[x["path"] for x in r.package(self.root,self.m["skills"][0])])
@@ -61,6 +71,59 @@ class Tests(unittest.TestCase):
   s=self.m["skills"][0];fs=r.package(self.root,s);remote=[{k:x[k] for k in ("path","size","sha256")} for x in fs]+[{"path":"skill-card.md","size":1,"sha256":"f"*64}]
   reg=Remote(meta={"owner":{"handle":"worldwonderer"},"displayName":"A","categories":["creative"],"topics":["fiction"]},version={"version":{"files":remote}});out=r.inspect(reg,s,r.fingerprint(fs));self.assertEqual("DISTRIBUTION_VERIFIED",out["status"]);self.assertTrue(out["security"]["hasWarnings"])
   remote.append({"path":"other","size":1,"sha256":"e"*64});self.assertEqual("CONTENT_CONFLICT",r.inspect(reg,s,r.fingerprint(fs))["status"])
+ def test_scan_policy_accepts_completed_advisories_and_rejects_missing_or_blocked_scans(self):
+  for status in ("clean","suspicious"):
+   with self.subTest(status=status):self.assertTrue(r.scan_accepted({"security":{"status":status,"hasScanResult":True,"hasWarnings":True}}))
+  for status in ("pending","queued","scanning","blocked","malicious","rejected","unknown",None):
+   with self.subTest(status=status):self.assertFalse(r.scan_accepted({"security":{"status":status,"hasScanResult":True}}))
+  for completed in (False,None,1,"true"):
+   with self.subTest(completed=completed):self.assertFalse(r.scan_accepted({"security":{"status":"suspicious","hasScanResult":completed}}))
+  for scan in (None,{}, {"security":{}},{"security":{"status":"suspicious"}}):
+   with self.subTest(scan=scan):self.assertFalse(r.scan_accepted(scan))
+  for flag in ("isMalwareBlocked","isHiddenByMod"):
+   with self.subTest(flag=flag):self.assertFalse(r.scan_accepted({"security":{"status":"suspicious","hasScanResult":True},"moderation":{flag:True}}))
+ def test_suspicious_inspect_preserves_scan_evidence_and_other_gates(self):
+  scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}};reg=self.public_remote(scan);s=self.m["skills"][0];fp=r.fingerprint(r.package(self.root,s));out=r.inspect(reg,s,fp)
+  self.assertEqual("DISTRIBUTION_VERIFIED",out["status"]);self.assertEqual(scan["security"],out["security"])
+  for status,expected in (("blocked","BLOCKED_MODERATION"),("malicious","BLOCKED_MODERATION"),("rejected","BLOCKED_MODERATION"),("scanning","PENDING_REVIEW"),("unknown","UNKNOWN")):
+   with self.subTest(status=status):
+    reg.s={"security":{"status":status,"hasScanResult":True}};self.assertEqual(expected,r.inspect(reg,s,fp)["status"])
+  reg.s={"security":{"status":"suspicious","hasScanResult":False}};self.assertEqual("UNKNOWN",r.inspect(reg,s,fp)["status"])
+  for flag in ("isMalwareBlocked","isHiddenByMod"):
+   with self.subTest(flag=flag):
+    reg.s={"security":{"status":"suspicious","hasScanResult":True},"moderation":{flag:True}};self.assertEqual("BLOCKED_MODERATION",r.inspect(reg,s,fp)["status"])
+  reg.s=scan;reg.v["version"]["files"].append({"path":"extra.txt","size":1,"sha256":"e"*64});self.assertEqual("CONTENT_CONFLICT",r.inspect(reg,s,fp)["status"])
+ def test_suspicious_dependency_is_verified_with_evidence(self):
+  s=self.m["skills"][0];s["runtimeDependsOn"]=["skill:worldwonderer/b@1.2.3"];s["packageDigest"]=r.inventory_digest(r.package(self.root,s));reg=self.public_remote();scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}}
+  reg.scan=lambda publisher,slug,version:scan if slug=="b" else {"security":{"status":"clean","hasScanResult":True}}
+  out=r.inspect(reg,s,r.fingerprint(r.package(self.root,s)));self.assertEqual("DEPENDENCY_PUBLIC_VERIFIED",out["status"]);self.assertEqual("verified",out["dependencies"][0]["status"]);self.assertEqual(scan["security"],out["dependencies"][0]["security"])
+  scan["security"]["status"]="malicious";self.assertEqual("BLOCKED_DEPENDENCY",r.inspect(reg,s,r.fingerprint(r.package(self.root,s)))["status"])
+  scan["security"]["status"]="suspicious";scan["security"]["hasScanResult"]=False;self.assertEqual("unverified",r.dependency_state(reg,s)[0]["status"])
+ @mock.patch.object(r.subprocess,"run")
+ def test_install_closure_only_forces_accepted_suspicious_packages(self,run):
+  s=self.m["skills"][0];s["runtimeDependsOn"]=["skill:worldwonderer/b@1.2.3"];reg=Remote();reg.scan=lambda publisher,slug,version:{"security":{"status":"suspicious" if slug=="b" else "clean","hasScanResult":True}};run.side_effect=self.installed_package
+  self.assertTrue(r.install_closure("clawhub",s,reg)["ok"]);self.assertEqual(2,run.call_count);self.assertNotIn("--force",run.call_args_list[0].args[0]);self.assertIn("--force",run.call_args_list[1].args[0]);self.assertIn("1.2.3",run.call_args_list[1].args[0])
+ @mock.patch.object(r.subprocess,"run")
+ def test_install_closure_refuses_incomplete_or_moderation_blocked_scans(self,run):
+  scans=[{"security":{"status":"suspicious","hasScanResult":False}},{"security":{"status":"malicious","hasScanResult":True}},{"security":{"status":"suspicious","hasScanResult":True},"moderation":{"isMalwareBlocked":True}},{"security":{"status":"suspicious","hasScanResult":True},"moderation":{"isHiddenByMod":True}}]
+  for scan in scans:
+   with self.subTest(scan=scan):self.assertFalse(r.install_closure("clawhub",self.m["skills"][0],Remote(scan=scan))["ok"])
+  run.assert_not_called()
+ @mock.patch.object(r.subprocess,"run")
+ def test_publish_and_verify_accept_suspicious_companion_closure(self,run):
+  s=self.m["skills"][0];s["runtimeDependsOn"]=["skill:worldwonderer/b@1.2.3"];s["packageDigest"]=r.inventory_digest(r.package(self.root,s));scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}};reg=self.public_remote(scan);fp=r.fingerprint(r.package(self.root,s));manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m));plan={"repository":self.m["repository"],"sourceSha":"a"*40,"skills":[{**s,"artifactDigest":fp}]};pp=self.root/"plan.json";pp.write_text(json.dumps(plan));run.side_effect=self.installed_package
+  with mock.patch.object(r,"check_cli"),mock.patch.object(r,"make_plan",return_value=plan),mock.patch.object(r,"cli") as publish:
+   rp=self.root/"publish-report.json";self.assertTrue(r.do_publish(manifest,self.root,pp,rp,"clawhub",reg));out=json.loads(rp.read_text());self.assertTrue(out["ok"]);self.assertEqual("DISTRIBUTION_VERIFIED",out["finalVerification"][0]["status"]);self.assertEqual("suspicious",out["finalVerification"][0]["security"]["status"]);publish.assert_not_called()
+   rp=self.root/"verify-report.json";self.assertTrue(r.do_verify(manifest,self.root,rp,reg,"clawhub"));out=json.loads(rp.read_text());self.assertTrue(out["ok"]);self.assertEqual("DISTRIBUTION_VERIFIED",out["results"][0]["status"]);self.assertEqual("suspicious",out["results"][0]["security"]["status"]);self.assertTrue(out["results"][0]["closure"]["ok"])
+  self.assertEqual(4,run.call_count);self.assertTrue(all("--force" in call.args[0] for call in run.call_args_list))
+ def test_audit_accepts_suspicious_scan_as_warning_without_incident(self):
+  scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}};reg=self.public_remote(scan);out=self.audit_report(reg)
+  self.assertEqual(1,out["coverage"]["verified"]);self.assertEqual([],out["findings"]);self.assertEqual(1,len(out["warnings"]));self.assertIn("suspicious",json.dumps(out["warnings"]))
+  for file in reg.v["version"]["files"]:del file["size"]
+  out=self.audit_report(reg);self.assertEqual(0,out["coverage"]["verified"]);self.assertEqual(1,out["coverage"]["unverifiedHealthy"]);self.assertEqual([],out["findings"])
+  for scan in ({"security":{"status":"malicious","hasScanResult":True}},{"security":{"status":"suspicious","hasScanResult":False}},{"security":{"status":"suspicious","hasScanResult":True},"moderation":{"isHiddenByMod":True}}):
+   with self.subTest(scan=scan):
+    reg=self.public_remote(scan);out=self.audit_report(reg);self.assertEqual(0,out["coverage"]["verified"]);self.assertTrue(out["findings"])
  @mock.patch.object(r.time,"sleep")
  @mock.patch.object(r.subprocess,"run")
  def test_bounded_retry(self,run,sleep):

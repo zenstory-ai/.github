@@ -288,14 +288,31 @@ def metadata_unobserved(meta,s):
     if meta is None:return []
     skill=meta.get("skill",meta);catalog=meta.get("metadata",{}) if isinstance(meta.get("metadata",{}),dict) else {}
     return [k for k in ("categories","topics") if s.get(k) and k not in skill and k not in catalog]
+def scan_security(scan):
+    sec=scan.get("security",{}) if isinstance(scan,dict) else {}
+    return sec if isinstance(sec,dict) else {}
+def scan_blocked(scan):
+    moderation=scan.get("moderation",{}) if isinstance(scan,dict) else {}
+    return scan_security(scan).get("status") in {"blocked","malicious","rejected"} or (isinstance(moderation,dict) and any(moderation.get(k) is True for k in ("isMalwareBlocked","isHiddenByMod")))
+def scan_accepted(scan):
+    sec=scan_security(scan)
+    return sec.get("status") in {"clean","suspicious"} and sec.get("hasScanResult") is True and not scan_blocked(scan)
+def scan_warnings(items):
+    warnings={}
+    for item in items:
+        for evidence in [item,*item.get("dependencies",[])]:
+            if evidence.get("status") in {"DISTRIBUTION_VERIFIED","verified"} and evidence.get("security",{}).get("status")=="suspicious":
+                warnings[evidence["identity"]]={k:evidence[k] for k in ("identity","version","security") if k in evidence}
+    for identity in warnings:print(f"::warning::ClawHub suspicious scan accepted as advisory: {identity}",file=sys.stderr)
+    return list(warnings.values())
 def dependency_state(reg,s):
     evidence=[]
     for value in s["runtimeDependsOn"]:
         if not value.startswith("skill:"):continue
         match=SKILL_DEP.fullmatch(value);p,slug,v=match.groups();vd=reg.version(p,slug,v);scan=reg.scan(p,slug,v)
-        sec=scan.get("security",{}) if isinstance(scan,dict) else {}
-        status="verified" if vd and sec.get("status")=="clean" and sec.get("hasScanResult") is True else "unverified"
-        evidence.append({"identity":f"{p}/{slug}","version":v,"status":status})
+        sec=scan_security(scan)
+        status="verified" if vd and scan_accepted(scan) else "unverified"
+        evidence.append({"identity":f"{p}/{slug}","version":v,"status":status,"security":{k:sec.get(k) for k in ("status","hasScanResult","hasWarnings")}})
     return evidence
 def inspect(reg,s,fp):
     p,slug,v=s["publisher"],s["slug"],s["version"]; res=reg.resolve(p,slug,fp); meta=reg.skill(p,slug)
@@ -306,16 +323,16 @@ def inspect(reg,s,fp):
         if actual_package is None:return {"status":"UNKNOWN","reason":"remote file hashes/sizes unavailable"}
         if actual_package!=expected_package:return {"status":"CONTENT_CONFLICT","actualPackageDigest":actual_package,"expectedPackageDigest":expected_package,"serverGeneratedFiles":gen}
         if md:return {"status":"POLICY_DRIFT","metadataDifferences":md,"packageDigest":actual_package,"serverGeneratedFiles":gen}
-        scan=reg.scan(p,slug,v); sec=scan.get("security",{}) if isinstance(scan,dict) else {}
+        scan=reg.scan(p,slug,v); sec=scan_security(scan)
         evidence={k:sec.get(k) for k in ("status","hasScanResult","hasWarnings")}
-        if sec.get("status")=="clean" and sec.get("hasScanResult") is True:
+        if scan_blocked(scan):return {"status":"BLOCKED_MODERATION","security":evidence}
+        if scan_accepted(scan):
             deps=dependency_state(reg,s)
             if any(x["status"]!="verified" for x in deps):return {"status":"BLOCKED_DEPENDENCY","packageDigest":actual_package,"dependencies":deps,"security":evidence}
             status="DEPENDENCY_PUBLIC_VERIFIED" if deps else "DISTRIBUTION_VERIFIED"
             return {"status":status,"packageDigest":actual_package,"serverGeneratedFiles":gen,"security":evidence,"dependencies":deps,"metadataUnobserved":metadata_unobserved(meta,s)}
         if sec.get("status") in {"pending","queued","scanning"}:return {"status":"PENDING_REVIEW","security":evidence}
-        if sec.get("status") in {"blocked","malicious","rejected"}:return {"status":"BLOCKED_MODERATION","security":evidence}
-        return {"status":"UNKNOWN","reason":"aggregate scan not clean/complete","security":evidence}
+        return {"status":"UNKNOWN","reason":"aggregate scan not accepted/complete","security":evidence}
     if res and res.get("match"):return {"status":"CONTENT_AT_OTHER_VERSION","match":res["match"],"latestVersion":res.get("latestVersion")}
     latest=res.get("latestVersion") if res else None
     latest_value=latest.get("version") if isinstance(latest,dict) else latest
@@ -353,13 +370,18 @@ def publish_args(s,remote,directory,source_repo,source_commit,dry=False):
     if s.get("topics") and "topics" in diff:args += ["--topics",",".join(s["topics"])]
     if dry:args.append("--dry-run")
     return args+["--json"]
-def install_closure(bin,s):
+def install_closure(bin,s,reg=None):
     specs=[(s["publisher"],s["slug"],s["version"])]
     for value in s["runtimeDependsOn"]:
         if value.startswith("skill:"):specs.append(SKILL_DEP.fullmatch(value).groups())
     with tempfile.TemporaryDirectory(prefix="clawhub-closure-") as td:
         for p,slug,v in dict.fromkeys(specs):
-            proc=subprocess.run([bin,"--workdir",td,"--dir","skills","--no-input","install",f"@{p}/{slug}","--version",v],text=True,capture_output=True)
+            args=[bin,"--workdir",td,"--dir","skills","--no-input","install",f"@{p}/{slug}","--version",v]
+            if reg is not None:
+                scan=reg.scan(p,slug,v)
+                if not scan_accepted(scan):return {"ok":False,"identity":f"{p}/{slug}","version":v,"error":"aggregate scan not accepted/complete"}
+                if scan_security(scan).get("status")=="suspicious":args.append("--force")
+            proc=subprocess.run(args,text=True,capture_output=True)
             if proc.returncode:return {"ok":False,"identity":f"{p}/{slug}","version":v,"error":(proc.stdout+proc.stderr)[-1000:]}
             if not (Path(td)/"skills"/f"@{p}"/slug/"SKILL.md").is_file():return {"ok":False,"identity":f"{p}/{slug}","version":v,"error":"installed owner-qualified package lacks SKILL.md at skills/@owner/slug"}
         return {"ok":True,"installed":[f"{p}/{slug}@{v}" for p,slug,v in dict.fromkeys(specs)],"layout":"one isolated shared skills root","executedSkillCode":False}
@@ -416,9 +438,9 @@ def do_publish(mp,root,pp,rp,bin,reg):
         if s["disposition"]!="publish":continue
         state=inspect(reg,s,fingerprint(package(root,s)))
         if state["status"]=="DEPENDENCY_PUBLIC_VERIFIED":
-            closure=install_closure(bin,s);state={**state,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
+            closure=install_closure(bin,s,reg);state={**state,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
         ok &= state["status"]=="DISTRIBUTION_VERIFIED";final.append({"identity":f"{s['publisher']}/{s['slug']}",**state})
-    write(rp,{"schemaVersion":1,"repository":new["repository"],"sourceSha":new["sourceSha"],"ok":bool(ok),"results":results,"finalVerification":final});return bool(ok)
+    write(rp,{"schemaVersion":1,"repository":new["repository"],"sourceSha":new["sourceSha"],"ok":bool(ok),"results":results,"finalVerification":final,"warnings":scan_warnings(final)});return bool(ok)
 def do_verify(mp,root,rp,reg,bin=None):
     m=read(mp);validate_manifest(m,root);results=[];ok=True;authoritative={}
     if bin:authoritative={(x["publisher"],x["slug"]):x.get("artifactDigest") for x in make_plan(mp,root,reg,bin)["skills"]}
@@ -428,11 +450,11 @@ def do_verify(mp,root,rp,reg,bin=None):
             r=inspect(reg,s,authoritative.get((s["publisher"],s["slug"])) or fingerprint(package(root,s)))
             if r["status"]=="DEPENDENCY_PUBLIC_VERIFIED":
                 if bin:
-                    closure=install_closure(bin,s);r={**r,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
+                    closure=install_closure(bin,s,reg);r={**r,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
                 else:r={**r,"status":"DEPENDENCY_CLOSURE_UNVERIFIED","reason":"verify requires --clawhub-bin for same-root companion installation"}
             ok &= r["status"]=="DISTRIBUTION_VERIFIED"
         results.append({"identity":f"{s['publisher']}/{s['slug']}",**r})
-    write(rp,{"schemaVersion":1,"repository":m["repository"],"ok":bool(ok),"results":results});return bool(ok)
+    write(rp,{"schemaVersion":1,"repository":m["repository"],"ok":bool(ok),"results":results,"warnings":scan_warnings(results)});return bool(ok)
 
 def fetch(url):
     try:
@@ -447,7 +469,7 @@ def audit(cp,reg):
     if c.get("schemaVersion")!=1 or not isinstance(c.get("repositories"),list):raise PolicyError("invalid catalog")
     allowed=set(c.get("allowedPublishers",[])); fixed={(x["publisher"],x["slug"]):(x["repository"],x["path"]) for x in c.get("identities",[])}
     if len(fixed)!=len(c.get("identities",[])):raise PolicyError("catalog identity ownership is duplicated")
-    findings=[];seen={};registered=set();den=exc=verified=unverified=0
+    findings=[];warnings=[];seen={};registered=set();den=exc=verified=unverified=0
     for src in c["repositories"]:
         repo=src.get("repository");registered.add(repo)
         if src.get("classification")!="canonical-public":continue
@@ -480,18 +502,20 @@ def audit(cp,reg):
                 got,_=remote_inventory(vd);remote_pkg=remote_package_digest(vd)
                 try:scan=reg.scan(s["publisher"],s["slug"],s["version"])
                 except RemoteError as e:findings.append({"key":label,"status":"UNKNOWN","detail":str(e)});continue
-                sec=scan.get("security",{}) if isinstance(scan,dict) else {}
+                sec=scan_security(scan)
                 expected_pkg=s.get("packageDigest")
                 if not isinstance(expected_pkg,str) or not re.fullmatch(r"[0-9a-f]{64}",expected_pkg):findings.append({"key":label,"status":"POLICY_DRIFT","detail":"manifest packageDigest missing or invalid"});continue
                 if remote_pkg and remote_pkg!=expected_pkg:findings.append({"key":label,"status":"CONTENT_CONFLICT","detail":f"remote packageDigest {remote_pkg} differs from expected {expected_pkg}"});continue
-                if remote_pkg==expected_pkg and sec.get("status")=="clean" and sec.get("hasScanResult") is True:verified+=1;continue
-                if got and sec.get("status")=="clean" and sec.get("hasScanResult") is True:unverified+=1;continue
-                st,detail="UNKNOWN","public version file hashes or aggregate clean scan unavailable"
+                if scan_blocked(scan):findings.append({"key":label,"status":"BLOCKED_MODERATION","detail":"ClawHub explicitly blocked this version"});continue
+                if scan_accepted(scan) and sec.get("status")=="suspicious":warnings.append({"key":label,"status":"SUSPICIOUS_SCAN","security":{k:sec.get(k) for k in ("status","hasScanResult","hasWarnings")},"detail":"ClawHub suspicious scan accepted as advisory"})
+                if remote_pkg==expected_pkg and scan_accepted(scan):verified+=1;continue
+                if got and scan_accepted(scan):unverified+=1;continue
+                st,detail="UNKNOWN","public version file hashes or aggregate accepted scan unavailable"
             findings.append({"key":label,"status":st,"detail":detail})
     try: public={x["full_name"] for x in fetch("https://api.github.com/orgs/zenstory-ai/repos?per_page=100&type=public")}
     except Exception as e:public=set();findings.append({"key":"zenstory-ai:repository-discovery","status":"UNKNOWN","detail":str(e)})
     for repo in sorted(public-registered):findings.append({"key":repo+":onboarding","status":"POLICY_DRIFT","detail":"public repository unclassified"})
-    return {"schemaVersion":1,"generatedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"coverage":{"verified":verified,"unverifiedHealthy":unverified,"denominator":den,"excluded":exc,"percent":100*verified/den if den else 100,"note":"unverifiedHealthy is not counted as verified and does not create an incident without an immutable expected digest"},"findings":findings}
+    return {"schemaVersion":1,"generatedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"coverage":{"verified":verified,"unverifiedHealthy":unverified,"denominator":den,"excluded":exc,"percent":100*verified/den if den else 100,"note":"unverifiedHealthy is not counted as verified and does not create an incident without an immutable expected digest"},"findings":findings,"warnings":warnings}
 
 def parser():
     p=argparse.ArgumentParser();s=p.add_subparsers(dest="cmd",required=True)
