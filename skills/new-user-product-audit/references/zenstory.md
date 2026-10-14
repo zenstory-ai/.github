@@ -11,6 +11,10 @@
 | production | `https://zenstory.ai` | `https://app.zenstory.ai` | 真实用户在用；**需要操作者明确授权** |
 | staging | — | `https://app-preview.zenstory.ai` | 受 Vercel Deployment Protection 保护 |
 
+按 zenstory 仓库 `AGENTS.md` 的约定，staging 禁用真实模型（测试不得产生模型费用），AI 回复不代表
+线上产出。staging 只用来测到达、注册、引导、界面与移动端；核心创作任务与产出质量须在获授权的
+production 上测，没有授权就标“未覆盖：staging 无真实模型”。
+
 `zenstory.ai` 是组织官网（同时介绍开源写作工具），从那里链到应用；应用根地址本身也有一个
 未登录首页。到达阶段两条入口都走：先从 `zenstory.ai` 点进应用（看官网对应用的介绍与跳转是否
 顺），再单独看应用未登录首页的五秒测试。staging 没有对应官网，只看应用首页，并在报告里注明。
