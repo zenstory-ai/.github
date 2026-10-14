@@ -57,8 +57,12 @@ after the source publisher succeeds; the source publisher itself only needs
 
 An acknowledged dispatch is **`CLAWHUB_QUEUED`**, not published/scan-clean.
 ClawHub's existing ownership, rights, per-skill version/hash and scan gates plus
-the daily anonymous audit remain authoritative. No workflow bypasses suspicious
-scans or silently waits for the next scheduled reconciliation.
+the daily anonymous audit remain authoritative. Completed `clean` and `suspicious`
+scans pass the distribution gate; `suspicious` remains an advisory in reports.
+Explicit malware/moderation blocks, unknown states, and missing or pending scans
+still fail. The isolated companion check uses `--force` only after rechecking a
+completed accepted suspicious scan. No handoff silently waits for the next
+scheduled reconciliation.
 
 ## Offline validation
 
