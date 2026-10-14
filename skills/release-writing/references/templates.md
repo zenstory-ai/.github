@@ -104,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 5. Release notes 骨架
 
-```markdown
+````markdown
 <一到两句：这一版是什么性质，要不要迁移>
 
 ### 主要变化
@@ -120,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```
 
 完整变更见 [CHANGELOG](https://github.com/<owner>/<repo>/blob/vX.Y.Z/CHANGELOG.md#xyz---yyyy-mm-dd)。
-```
+````
 
 标题：`vX.Y.Z — 三到八个字的主题`。
 

@@ -18,7 +18,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "eff911f803c5b49869e55ded8cc36cf235491efa2e4196cb8ca120b7cde5125e",
+      "packageDigest": "96038ab36f9398d74b0cfbc648ff3e9efdb09ffb1cc5611b671c6136007f1bd8",
       "path": "skills/release-writing",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -34,7 +34,7 @@
         "changelog",
         "semver"
       ],
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "categories": [
@@ -48,7 +48,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "6c962148a5381eb246b0b843730ea2bd147e5317e7ec763419756396f1cc708a",
+      "packageDigest": "665c8f37e8756f5aa9e893d66c38567080dbbfdb3e08c11c63722aa42f95ab3b",
       "path": "skills/new-user-product-audit",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -64,7 +64,7 @@
         "onboarding",
         "user-testing"
       ],
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "categories": [

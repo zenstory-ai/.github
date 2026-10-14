@@ -1,6 +1,6 @@
 ---
 name: release-writing
-description: ZenStory AI 的发布标准与发布流程：切版本、写 CHANGELOG 与 GitHub release notes、修订往期发布、仓库改名后清理失效链接。当有人说“发个 release”“切 0.x.y”“整理 CHANGELOG”“release notes 怎么写”“把往期发布说明改一下”时使用。它规定本组织的格式与发布动作顺序；条目本身的起草可以借助任何 changelog 生成器。
+description: ZenStory AI 的发布标准与发布流程：切版本、写 CHANGELOG 与 GitHub release notes、修订往期发布、仓库改名后清理失效链接。当有人说“发个 release”“切 0.x.y”“整理 CHANGELOG”“release notes 怎么写”“把往期发布说明改一下”时使用。它规定本组织的格式与发布动作顺序；动作顺序只适用于以 vX.Y.Z tag 发版的源码与技能仓库，zenstory 产品仓库（prod-v*、cli-v*）等自有发布流程的仓库只沿用格式部分。条目本身的起草可以借助任何 changelog 生成器。
 license: MIT
 ---
 
@@ -36,13 +36,24 @@ license: MIT
 
 ## 2. 发布流程
 
+本节适用于以 `vX.Y.Z` tag 发版的源码与技能仓库（组织 `.github` 仓库、各公开技能包、oh-story-dsh）。
+zenstory 产品仓库不打 `vX.Y.Z`：生产发布走 `prod-v*` tag、CLI 走 `cli-vX.Y.Z`，流程以该仓库的
+`docs/ops/release-ci-cd.md` 为准，只沿用第 1、3 节的格式与取舍。仓库自有发布文档（如 oh-story-dsh
+的 `docs/RELEASING.md`）与本节冲突时，以仓库文档为准。
+
 ### 阶段一：确认可以发
 
 ```bash
 git checkout main && git pull --ff-only
 git status --porcelain                  # 必须为空
-gh run list --branch main --limit 1     # main 上最近一次 CI 必须绿
+SHA=$(git rev-parse HEAD)
+gh run list --commit "$SHA" --workflow <CI 工作流文件> --event push \
+  --json workflowName,status,conclusion  # 每个 CI 工作流都要有这个提交的 completed / success
 ```
+
+CI 工作流看 `.release/policy.json` 的 `ciWorkflows`；没有这个文件就看 `.github/workflows/` 里
+push 到 main 触发的校验工作流，逐个查。不要用 `--branch main --limit 1`：它返回 main 上最近
+一次任意工作流（定时巡检、发布任务），不一定是这个提交的 CI。
 
 跑仓库自己定义的发布检查（`CONTRIBUTING.md` 里通常有），不要只跑单元测试。
 
@@ -53,11 +64,19 @@ gh run list --branch main --limit 1     # main 上最近一次 CI 必须绿
 起草可借助生成器，再按 [第 1 节](#1-组织标准) 校格式：把 `## [Unreleased]` 切成
 `## [X.Y.Z] - YYYY-MM-DD`、补底部 compare 链接、在上方留一个新的空 Unreleased 节。
 
+**版本号与 CHANGELOG 同一提交改齐。** 仓库有 `.release/policy.json` 时，把其 `versionFiles` 列出的
+每一处（文本文件整份内容，或 JSON 文件里 `pointer` 指向的字段）都改成 `X.Y.Z`。漏改或改错，tag 推上去
+后发布工作流会拒发（多处不一致报 `repository version metadata disagrees`，全部未改报
+`stable tag does not equal repository version`），而已推的 tag 不能删改。
+没有这个文件的仓库按其发布文档改版本（如 oh-story-dsh 改根与包版本）。
+
 ### 阶段三：走 PR，不要直接推 main
 
 ```bash
 git checkout -b release/vX.Y.Z
-git add CHANGELOG.md && git commit -m "release: X.Y.Z"
+git add CHANGELOG.md <versionFiles 里的每个文件> && git commit -m "release: X.Y.Z"
+python3 <组织 .github 仓库>/scripts/source_release.py check --root . --sha "$(git rev-parse HEAD)" \
+  --tag vX.Y.Z --repository <owner>/<repo>  # 有 .release/policy.json 时自检：版本、tag、CHANGELOG 标题须一致
 git push -u origin release/vX.Y.Z
 gh pr create --base main --title "release: X.Y.Z" --body "<要点与升级影响>"
 gh pr checks <PR>                       # 全部 SUCCESS 再合
@@ -68,7 +87,8 @@ gh pr merge <PR> --squash --delete-branch
 
 ### 阶段四：打 tag
 
-tag **必须打在已合并的 main 上**，否则它指向一个不在主线上的提交。
+tag **必须打在已合并的 main 上**，否则它指向一个不在主线上的提交。打之前按阶段一的命令确认
+这个合并提交（`git rev-parse HEAD`）的 CI 全绿：发布工作流只认这个 SHA 的 CI，不会退回更早的成功记录。
 
 ```bash
 git checkout main && git pull --ff-only
@@ -77,6 +97,20 @@ git push origin vX.Y.Z
 ```
 
 ### 阶段五：建 release
+
+先看 `.github/workflows/` 里有没有推 `v*` tag 就触发的发布工作流（`grep -l 'tags:' .github/workflows/*`；
+技能包仓库与 oh-story-dsh 都是 `release.yml`）。
+
+**有**：不要 `gh release create`。工作流会自己建 Release（标题不带主题，正文是自动生成的）并上传附件，
+手建要么报已存在，要么与它抢跑。等它成功跑完，再改标题和正文：
+
+```bash
+gh run list --commit "$(git rev-parse 'vX.Y.Z^{commit}')" --workflow release.yml \
+  --json status,conclusion               # 等到 completed / success；失败就停下排查，不要手建 Release
+gh release edit vX.Y.Z --title "vX.Y.Z — <主题>" --notes-file notes.md   # notes.md 按 references/templates.md 骨架写
+```
+
+**没有**（如组织 `.github` 仓库）：自己建。
 
 ```bash
 gh release create vX.Y.Z --title "vX.Y.Z — <主题>" --notes "$(cat <<'EOF'
@@ -91,6 +125,7 @@ EOF
 OWNER=<owner>; REPO=<repo>; V=X.Y.Z
 git ls-remote --tags origin "refs/tags/v$V"
 gh release view "v$V" --repo "$OWNER/$REPO" --json body --jq '.body' | wc -l   # ≤20
+gh release view "v$V" --repo "$OWNER/$REPO" --json assets --jq '.assets[].name' # 有发布工作流时，它上传的附件都在
 ```
 
 超过 20 行就回去删。**实测表明只写一个目标数字不管用**——同一份指引下产出仍在 27 行上下，
@@ -136,14 +171,20 @@ gh release view "v$V" --repo "$OWNER/$REPO" --json body --jq '.body' | wc -l   #
 与自我批评，压到 20 行内。**CHANGELOG 的历史小节不要回头改写**——release notes 是展示面，
 CHANGELOG 是账本；改名导致的链接失效属于例外，那是修复失效引用。
 
-仓库或组织改名后，往期 release notes 不会自动更新，安装命令会继续指向旧名字：
+仓库或组织改名后，往期 release notes 不会自动更新，安装命令会继续指向旧名字。`OLD` 与 `NEW`
+都写完整命名空间，查找和替换用同一对，正文没变就不回写：
 
 ```bash
-OWNER=<owner>; REPO=<repo>; OLD=<旧命名空间>
+OWNER=<owner>; REPO=<repo>
+OLD=<旧owner>/<旧repo>; NEW=$OWNER/$REPO   # 只改了组织名时：OLD=<旧owner>; NEW=$OWNER
+OLD_RE=$(printf '%s' "$OLD" | sed 's/[].[*^$\\]/\\&/g')   # 转义正则元字符
+# 两侧须是名字以外的字符，oh-story-dsh、goldorg 这类同前缀的名字才不会被误改
+RE="s#(^|[^A-Za-z0-9_.-])${OLD_RE}([^A-Za-z0-9_-]|\$)#\1${NEW}\2#g"
 for t in $(gh release list --repo "$OWNER/$REPO" --limit 100 --json tagName --jq '.[].tagName'); do
   gh release view "$t" --repo "$OWNER/$REPO" --json body --jq '.body' > /tmp/b.txt
-  grep -q "$OLD" /tmp/b.txt && { sed "s#$OLD/#$OWNER/#g" /tmp/b.txt > /tmp/n.txt; \
-    gh release edit "$t" --repo "$OWNER/$REPO" --notes-file /tmp/n.txt && echo "$t 已修正"; }
+  sed -E -e "$RE" -e "$RE" /tmp/b.txt > /tmp/n.txt   # 跑两遍：只隔一个字符的相邻两处，第一遍会漏掉后一处
+  cmp -s /tmp/b.txt /tmp/n.txt || { gh release edit "$t" --repo "$OWNER/$REPO" --notes-file /tmp/n.txt \
+    && echo "$t 已修正"; }
 done
 ```
 
