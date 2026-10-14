@@ -35,13 +35,13 @@ Code、Codex 等 Agent 宿主中运行；想直接在浏览器里写，就用 Ze
 
 - [Agent skills for writers](https://zenstory.ai/oh-story/agent-skills-for-writers) ｜ [写作 Skill 入门](https://zenstory.ai/zh/oh-story/agent-skills-for-writers)
 - [Import and continue an unfinished novel](https://zenstory.ai/oh-story/import-and-continue) ｜ [已有小说导入续写](https://zenstory.ai/zh/oh-story/import-and-continue)
-- [Revise AI-flavored prose](https://zenstory.ai/oh-story/revise-ai-prose) ｜ [原创改稿前后对照](https://zenstory.ai/zh/oh-story/revise-ai-prose)
+- [Revise AI-flavored prose](https://zenstory.ai/oh-story/revise-ai-prose) ｜ [去 AI 味：三遍改稿](https://zenstory.ai/zh/oh-story/revise-ai-prose)
 - [Novel to short drama](https://zenstory.ai/drama-skills/novel-to-short-drama) ｜ [小说改短剧](https://zenstory.ai/zh/drama-skills/novel-to-short-drama)
 - [Novel-to-game quick start](https://zenstory.ai/novel-to-game/quick-start) ｜ [小说改游戏入门](https://zenstory.ai/zh/novel-to-game/quick-start)
 - [Video-to-narration workflow](https://zenstory.ai/video-recap/video-to-narration) ｜ [视频解说完整流程](https://zenstory.ai/zh/video-recap/video-to-narration)
 
-All 21 guides: [zenstory.ai/guides](https://zenstory.ai/guides) ｜ [zenstory.ai/zh/guides](https://zenstory.ai/zh/guides)<br>
-Browser workbench docs ｜ 网页工作台文档: [zenstory.ai/docs](https://zenstory.ai/docs)
+All guides ｜ 全部创作指南: [zenstory.ai/guides](https://zenstory.ai/guides) ｜ [zenstory.ai/zh/guides](https://zenstory.ai/zh/guides)<br>
+[Browser workbench docs](https://zenstory.ai/docs#en) ｜ [网页工作台文档](https://zenstory.ai/docs#zh)
 
 ## How the pieces fit ｜ 项目如何协作
 
