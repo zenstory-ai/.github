@@ -69,16 +69,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <2–4 行导语：这一版主要在做什么，需不需要迁移。有破坏性变更时在这里明说。>
 
+### Added
+
+**支持 Windows 原生环境**。此前在入口即失败。目录访问改为双后端，并在打开前后比对文件身份。
+
 ### Changed
 
 **任务必须点名来源条目**。`prepare` 现在要求 `source_entry` 指向对应标题并核对正文，任一
 漂移都 fail closed。
 
 *升级*：旧版本建立的任务若缺 `source_entry` 会被拒绝。补上该字段并让两处正文一致即可。
-
-### Added
-
-**支持 Windows 原生环境**。此前在入口即失败。目录访问改为双后端，并在打开前后比对文件身份。
 
 ### Fixed
 
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 升级提示
 
-<仅当有 Changed 时出现。写用户要做的动作。>
+<有升级动作时写明用户要做什么，包含删除或收紧既有用法的影响。>
 
 ```bash
 <安装或升级命令>

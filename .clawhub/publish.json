@@ -18,7 +18,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "96038ab36f9398d74b0cfbc648ff3e9efdb09ffb1cc5611b671c6136007f1bd8",
+      "packageDigest": "7cdec67ec9da6209dad1347615ea509daf3294301bcdb35f2439aeb59d5c5c26",
       "path": "skills/release-writing",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -34,7 +34,7 @@
         "changelog",
         "semver"
       ],
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "categories": [
@@ -48,7 +48,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "665c8f37e8756f5aa9e893d66c38567080dbbfdb3e08c11c63722aa42f95ab3b",
+      "packageDigest": "c9ecbceeaf0b5858806550571870453206664cc6de4836ad0a9a4b7b150c76ec",
       "path": "skills/new-user-product-audit",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -64,7 +64,7 @@
         "onboarding",
         "user-testing"
       ],
-      "version": "1.0.1"
+      "version": "1.0.2"
     },
     {
       "categories": [
@@ -78,7 +78,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "3f4268d13b6833ddae7e883396703573697c1b2021d096f9fce01e23212b811f",
+      "packageDigest": "4dc277236fa2ee9983f980f3813b0b55f7cb81dc725c2b8f0df8d5dee90420bd",
       "path": "skills/no-black-box",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -94,7 +94,7 @@
         "documentation",
         "knowledge-transfer"
       ],
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "categories": [

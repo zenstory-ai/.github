@@ -21,8 +21,7 @@ and exact successful matrix/job names. `schemaVersion` is `1`.
 
 ## Release path
 
-1. Update existing version authorities and prepare the dated changelog normally.
-   This rollout does not bump versions or create tags.
+1. Update existing version authorities and prepare the dated changelog.
 2. Merge through existing protected checks. Primary and inventory workflows run
    on every main push. CI proof binds repository, workflow ID/path, push/main,
    exact SHA, run ID, newest attempt, check-suite Actions app and matrix jobs.
