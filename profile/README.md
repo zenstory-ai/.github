@@ -2,23 +2,21 @@
 
 # ZenStory AI
 
-**Building the open story stack · 构建开放的 AI 故事创作生态**
-
-Create stories. Adapt them. Ship them.<br>
-让故事从灵感出发，走向小说、短剧、游戏与视频。
+**Open-source tools for novels, short dramas, games and video**<br>
+**用开源工具写小说、做短剧、改编游戏与视频。**
 
 [Website](https://zenstory.ai) · [中文站](https://zenstory.ai/zh) · [All projects](https://zenstory.ai/projects) · [Sponsors](#sponsors--partners--赞助与合作) · [Contribute](#build-with-us--参与共建)
 
 </div>
 
-We build open-source AI tools for writing stories and adapting them into short
-drama, games and video. The skill packs run in Claude Code, Codex and other agent
-hosts; if you would rather write in a browser, use the ZenStory Workbench at
+Choose a project for the material you have and the result you want. The skill packs
+run in Claude Code, Codex and other agent hosts. Oh Story DSH brings these workflows
+to DeepSeek Harness; for writing in a browser, use the ZenStory Workbench at
 [app.zenstory.ai](https://app.zenstory.ai).
 
-我们打造开源的 AI 故事创作工具：写小说，再改编成短剧、游戏与视频。技能包在 Claude
-Code、Codex 等 Agent 宿主中运行；想直接在浏览器里写，就用 ZenStory 工作台
-[app.zenstory.ai](https://app.zenstory.ai)。
+根据已有素材和想完成的作品选择项目。技能包在 Claude Code、Codex 等 Agent 宿主中运行；
+DeepSeek Harness 用户可用 Oh Story DSH。在浏览器里写小说，可直接进入
+[ZenStory 工作台](https://app.zenstory.ai)。
 
 ## Start with what you want to make ｜ 从目标开始
 
@@ -35,7 +33,7 @@ Code、Codex 等 Agent 宿主中运行；想直接在浏览器里写，就用 Ze
 
 - [Agent skills for writers](https://zenstory.ai/oh-story/agent-skills-for-writers) ｜ [写作 Skill 入门](https://zenstory.ai/zh/oh-story/agent-skills-for-writers)
 - [Import and continue an unfinished novel](https://zenstory.ai/oh-story/import-and-continue) ｜ [已有小说导入续写](https://zenstory.ai/zh/oh-story/import-and-continue)
-- [Revise AI-flavored prose](https://zenstory.ai/oh-story/revise-ai-prose) ｜ [去 AI 味：三遍改稿](https://zenstory.ai/zh/oh-story/revise-ai-prose)
+- [Revise AI-flavored prose](https://zenstory.ai/oh-story/revise-ai-prose) ｜ [去 AI 味：保留事实与文风](https://zenstory.ai/zh/oh-story/revise-ai-prose)
 - [Novel to short drama](https://zenstory.ai/drama-skills/novel-to-short-drama) ｜ [小说改短剧](https://zenstory.ai/zh/drama-skills/novel-to-short-drama)
 - [Novel-to-game quick start](https://zenstory.ai/novel-to-game/quick-start) ｜ [小说改游戏入门](https://zenstory.ai/zh/novel-to-game/quick-start)
 - [Video-to-narration workflow](https://zenstory.ai/video-recap/video-to-narration) ｜ [视频解说完整流程](https://zenstory.ai/zh/video-recap/video-to-narration)
@@ -43,30 +41,18 @@ Code、Codex 等 Agent 宿主中运行；想直接在浏览器里写，就用 Ze
 All guides ｜ 全部创作指南: [zenstory.ai/guides](https://zenstory.ai/guides) ｜ [zenstory.ai/zh/guides](https://zenstory.ai/zh/guides)<br>
 [Browser workbench docs](https://zenstory.ai/docs#en) ｜ [网页工作台文档](https://zenstory.ai/docs#zh)
 
-## How the pieces fit ｜ 项目如何协作
-
-- **Write ｜ 写作** — Write in the ZenStory Workbench in your browser, or with Oh Story inside your agent host.<br>
-  在浏览器里用 ZenStory 工作台写，或在 Agent 宿主里用 Oh Story 写。
-- **Adapt ｜ 改编** — Take story material into Drama Skills for scripts and storyboards, or into Novel to Game for a playable build; take an existing video into Video Recap Skills for a narrated recap.<br>
-  有了故事材料，用 Drama Skills 做剧本与分镜，或用 Novel to Game 做可玩版本；有了视频，用 Video Recap Skills 做解说成片。
-- **DeepSeek Harness** — Oh Story DSH is a community plugin that brings the novel, short-drama, game and video workflows into DeepSeek Harness.<br>
-  Oh Story DSH 是社区插件，把小说、短剧、游戏与视频四类工作流带进 DeepSeek Harness。
-
 ## Sponsors & Partners ｜ 赞助与合作
 
-We welcome support from language, image, and video model developers and API
-providers. API credits, model access, and financial sponsorship help us improve
-integrations, test creative workflows, and share examples with the community.
+Language, image and video model developers and API providers can support the
+projects through API credits, model access or financial sponsorship. This support
+helps us improve integrations, test creative workflows and share public examples.
+We acknowledge supporting partners in this organization profile and relevant
+project READMEs. Contact [support@zenstory.ai](mailto:support@zenstory.ai) for
+sponsorships and partnerships.
 
-Supporting partners are acknowledged in our organization profile and relevant
-project READMEs. For sponsorships and partnerships, contact
-[support@zenstory.ai](mailto:support@zenstory.ai).
-
-我们欢迎语言、图像和视频模型厂商及 API 服务商支持 ZenStory 的开源创作工具。调用额度、
-模型服务与资金赞助，将帮助我们完善模型接入、测试创作流程，并为社区提供更多公开示例。
-
-支持我们的伙伴将在组织主页及相关项目 README 中获得致谢与展示。赞助与合作请联系
-[support@zenstory.ai](mailto:support@zenstory.ai)。
+欢迎语言、图像和视频模型厂商及 API 服务商通过调用额度、模型服务或资金赞助支持这些项目，
+帮助我们完善模型接入、测试创作流程、分享公开示例。支持伙伴将在组织主页及相关项目 README
+中获得致谢与展示。赞助与合作请联系 [support@zenstory.ai](mailto:support@zenstory.ai)。
 
 ## Build with us ｜ 参与共建
 
