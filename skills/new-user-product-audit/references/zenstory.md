@@ -28,7 +28,8 @@ production 上测，没有授权就标“未覆盖：staging 无真实模型”�
 - 浏览器：用 `vercel env run` 注入短期 OIDC 令牌，作为按源限定的请求头带上：
 
 ```bash
-# 在 zenstory 仓库的 apps/web 目录执行（已 link 到 web 的 Vercel 项目；没 link 先 `vc link`）
+# 在 zenstory 仓库的 apps/web 目录执行，须已核对并链接到正确的 Vercel 项目
+# 未链接时先请维护者提供项目 ID 与访问方式，不自动创建或关联项目
 vc env run -- sh -c \
   'test -n "$VERCEL_OIDC_TOKEN" && agent-browser --session "$2" open "$1" \
      --headers "{\"x-vercel-trusted-oidc-idp-token\":\"$VERCEL_OIDC_TOKEN\"}"' \

@@ -88,9 +88,10 @@ done
 if [ -z "$ID" ]; then
   echo "5 分钟内没有收到含“${FROM_HINT}”的验证邮件——这本身是一条发现，记进报告" >&2; exit 2
 fi
+VERIFY_MAIL="${CRED%.json}-$PERSONA-verify-mail.txt"       # 凭据目录内，远离运行日志和报告
 curl -fsS "$API/messages/$ID" -H "Authorization: Bearer $TOKEN" \
-  | jq -r '.text' > "$RUN/logs/$PERSONA-verify-mail.txt"   # 检查完内容后删除此文件
-echo "已收到，内容在 $RUN/logs/$PERSONA-verify-mail.txt"
+  | jq -r '.text' > "$VERIFY_MAIL"
+echo "已收到，私有邮件文件：$VERIFY_MAIL"
 SH
 ```
 
@@ -100,4 +101,4 @@ SH
 邮件本身也要评估：发件人名称是否可信、标题是否说清用途、正文语言是否与注册时一致、链接是否
 可点、有效期是否说明、会不会进垃圾箱（一次性邮箱无法判断这一点，报告中注明）。
 
-收尾：报告附录只写邮箱地址；运行结束后删除 `logs/<persona>-verify-mail.txt`。
+收尾：报告附录只写邮箱地址；核验后删除凭据目录中的 `<产品>-<环境>-<persona>-verify-mail.txt`，邮件正文和验证链接不进入运行日志或报告。
