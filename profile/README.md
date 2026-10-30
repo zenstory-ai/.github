@@ -37,6 +37,13 @@ DeepSeek Harness 用户可用 Oh Story DSH。在浏览器里写小说，可直�
 - [Novel to short drama](https://zenstory.ai/drama-skills/novel-to-short-drama) ｜ [小说改短剧](https://zenstory.ai/zh/drama-skills/novel-to-short-drama)
 - [Novel-to-game quick start](https://zenstory.ai/novel-to-game/quick-start) ｜ [小说改游戏入门](https://zenstory.ai/zh/novel-to-game/quick-start)
 - [Video-to-narration workflow](https://zenstory.ai/video-recap/video-to-narration) ｜ [视频解说完整流程](https://zenstory.ai/zh/video-recap/video-to-narration)
+- [Web novel opening: the first three chapters](https://zenstory.ai/oh-story/novel-opening) ｜ [黄金三章怎么写](https://zenstory.ai/zh/oh-story/novel-opening)
+- [Chapter-ending hooks for web serials](https://zenstory.ai/oh-story/chapter-ending-hooks) ｜ [网文断章技巧](https://zenstory.ai/zh/oh-story/chapter-ending-hooks)
+- [Chapter outline template](https://zenstory.ai/oh-story/chapter-outline-template) ｜ [小说细纲模板](https://zenstory.ai/zh/oh-story/chapter-outline-template)
+- [Web-fiction outline template](https://zenstory.ai/oh-story/novel-outline-template) ｜ [网文大纲模板](https://zenstory.ai/zh/oh-story/novel-outline-template)
+- [Storyboard script template for short drama](https://zenstory.ai/drama-skills/script-to-storyboard) ｜ [分镜脚本怎么写](https://zenstory.ai/zh/drama-skills/script-to-storyboard)
+- [Character turnaround sheet prompts](https://zenstory.ai/drama-skills/character-turnaround-prompt) ｜ [角色三视图提示词](https://zenstory.ai/zh/drama-skills/character-turnaround-prompt)
+- [Seedance prompt guide](https://zenstory.ai/drama-skills/seedance-prompts) ｜ [Seedance 提示词怎么写](https://zenstory.ai/zh/drama-skills/seedance-prompts)
 
 All guides ｜ 全部创作指南: [zenstory.ai/guides](https://zenstory.ai/guides) ｜ [zenstory.ai/zh/guides](https://zenstory.ai/zh/guides)<br>
 [Browser workbench docs](https://zenstory.ai/docs#en) ｜ [网页工作台文档](https://zenstory.ai/docs#zh)
