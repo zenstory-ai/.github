@@ -105,6 +105,12 @@
     },
     {
       "publisher": "worldwonderer",
+      "slug": "short-drama-breakdown",
+      "repository": "zenstory-ai/drama-skills",
+      "path": "skills/short-drama-breakdown"
+    },
+    {
+      "publisher": "worldwonderer",
       "slug": "short-drama-develop",
       "repository": "zenstory-ai/drama-skills",
       "path": "skills/short-drama-develop"
