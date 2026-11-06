@@ -14,7 +14,7 @@ run in Claude Code, Codex and other agent hosts. Oh Story DSH brings these workf
 to DeepSeek Harness; for writing in a browser, use the ZenStory Workbench at
 [app.zenstory.ai](https://app.zenstory.ai).
 
-根据已有素材和想完成的作品选择项目。技能包在 Claude Code、Codex 等 Agent 宿主中运行；
+根据已有素材和想完成的作品选择项目。技能包在 Claude Code、Codex 等 Agent 工具中运行；
 DeepSeek Harness 用户可用 Oh Story DSH。在浏览器里写小说，可直接进入
 [ZenStory 工作台](https://app.zenstory.ai)。
 
