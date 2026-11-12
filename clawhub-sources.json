@@ -69,6 +69,12 @@
     },
     {
       "publisher": "worldwonderer",
+      "slug": "game-design",
+      "repository": "zenstory-ai/novel-to-game",
+      "path": "skills/game-design"
+    },
+    {
+      "publisher": "worldwonderer",
       "slug": "game-qa",
       "repository": "zenstory-ai/novel-to-game",
       "path": "skills/game-qa"
