@@ -1,67 +1,53 @@
-# 一次性邮箱：真实注册与收验证邮件
+# 一次性邮箱：真实注册与收信脚本
 
-用一次性邮箱 API 给每个 persona 注册一个全新账号，收验证邮件。下面以 [mail.tm](https://docs.mail.tm)
-为例；它没有官方 SLA，取不到域名或收不到信时换同类服务（方法相同），并在报告里注明。
+用一次性邮箱 API 为每个真实注册的 persona 建独立收件箱。下文以 [mail.tm](https://docs.mail.tm) 为例；该服务无 SLA，取不到域名、收信超时或域名被产品注册黑名单拦截时，先记录页面提示语是否清晰，再换同类服务或操作者提供的测试邮箱。
 
-## 规则
+## 1. 规则与接口速查（`https://api.mail.tm`）
 
-- 一个 persona 一个邮箱，不复用。地址前缀带 `audit`，例如 `audit-novelist-20261008`。
-- 邮箱密码与产品密码都随机生成，存 `~/.config/product-audit/<产品>-<环境>.json`，权限 `0600`，
-  按 persona 分键合并写入（不覆盖其他 persona），不进任何仓库、不进报告。
-- 一次性邮箱是公开服务：**验证邮件里的链接/验证码只用于本次注册**，不要贴进报告或日志。
-- 有的产品会拦截一次性邮箱域名——这本身就是一条发现（记录拦截文案是否清楚），然后改用操作者
-  提供的测试邮箱。
-- 轮询收件箱：每 5–10 秒一次，最多 5 分钟；记录从提交注册到收到邮件的耗时。
-
-## mail.tm 接口
-
-基地址 `https://api.mail.tm`，JSON 请求需带 `Content-Type: application/json`。
+- 一人一箱，不跨 persona 复用；凭据按 persona 分键**合并写入** `~/.config/product-audit/<产品>-<环境>.json`（`0600`），严禁整文件覆盖冲掉前序角色密码。
+- 验证邮件落到凭据目录私有临时文件，验完即删；6 位验证码、验证链接、密码和 token 绝不打印到终端或写入日志、报告。
 
 | 步骤 | 请求 | 说明 |
 |---|---|---|
-| 1 取域名 | `GET /domains` | 返回 `hydra:member[]`，取一个 `isActive` 的 `domain` |
-| 2 建邮箱 | `POST /accounts` `{"address","password"}` | 成功 201；地址被占用返回 422，换前缀重试 |
-| 3 取令牌 | `POST /token` `{"address","password"}` | 返回 `{"token"}`，后续请求带 `Authorization: Bearer <token>` |
-| 4 列邮件 | `GET /messages` | 返回 `hydra:member[]`，含 `id`、`from`、`subject`、`createdAt` |
-| 5 读邮件 | `GET /messages/{id}` | 含 `text` 与 `html`；从中提取验证链接或验证码 |
+| 1 取域名 | `GET /domains` | 从 `hydra:member[]` 取 `isActive` 的 `domain` |
+| 2 建邮箱 | `POST /accounts` `{"address","password"}` | `Content-Type: application/json`，201 成功（422 重名换后缀） |
+| 3 取令牌 | `POST /token` `{"address","password"}` | 返回 `{"token"}`，后续带 `Authorization: Bearer <token>` |
+| 4 列邮件 | `GET /messages` | 每 5–10 秒查一次，最多 5 分钟，记录收信耗时 |
+| 5 读邮件 | `GET /messages/{id}` | 含 `text` 与 `html`（数组）；纯 HTML 邮件 `text` 为空，须回退读 `html` |
 
-## 示例脚本
+## 2. 无状态单条执行脚本
 
-宿主的 shell 状态不跨命令保留，而且 `set -e` 失败时会结束当前 shell。所以下面两段**各自是
-一条独立命令**：用 `bash <<'SH' … SH` 在子 shell 里跑，开头 source 开跑时写好的
-`$RUN/env.sh`（见 SKILL.md 第 2 节，路径换成当时打印的字面值），persona 显式写在脚本里。
+每次 Bash 工具调用不保留变量，以下两段各自作为一条独立 `bash <<'SH' … SH` 执行，开头加载开跑时生成的 `env.sh` 字面路径。
 
-第一段：为一个 persona 建邮箱并**合并写入**凭据文件（文件按 persona 分键，多个 persona 共用
-一个文件；不要整体覆盖，否则前一个 persona 的凭据会丢，它就无法在「离开再回来」阶段重新登录）。
+**第一段：创建收件箱并合并写入凭据**
 
 ```bash
 bash <<'SH'
 set -euo pipefail
-umask 077                                                  # 新建文件默认 0600
-. ~/audit-runs/20261008-1400-zenstory-staging/env.sh       # 提供 RUN / PRODUCT / TARGET
+umask 077
+. ~/audit-runs/20261008-1400-zenstory-staging/env.sh
 PERSONA=novelist
-CRED=~/.config/product-audit/$PRODUCT-$TARGET.json         # 运行目录与仓库之外
+CRED=~/.config/product-audit/$PRODUCT-$TARGET.json
 API=https://api.mail.tm
 mkdir -p "$(dirname "$CRED")"
 [ -f "$CRED" ] || echo '{}' > "$CRED"
 if jq -e --arg p "$PERSONA" 'has($p)' "$CRED" >/dev/null; then
-  echo "凭据文件里已有 ${PERSONA}，换一个 persona 名，或确认旧账号不再使用后再删该键" >&2; exit 1
+  echo "凭据已有 ${PERSONA}，请换名或确认旧号停用后删该键" >&2; exit 1
 fi
 DOMAIN=$(curl -fsS "$API/domains" | jq -r '[.["hydra:member"][] | select(.isActive)][0].domain')
 ADDR="audit-$PERSONA-$(date +%Y%m%d)-$RANDOM@$DOMAIN"
 MAILPW=$(openssl rand -base64 18)
-APPPW="Au$(openssl rand -hex 8)!9"                         # 满足常见密码规则
+APPPW="Au$(openssl rand -hex 8)!9"
 curl -fsS -X POST "$API/accounts" -H 'Content-Type: application/json' \
   -d "$(jq -n --arg a "$ADDR" --arg p "$MAILPW" '{address:$a,password:$p}')" >/dev/null
 jq --arg p "$PERSONA" --arg a "$ADDR" --arg m "$MAILPW" --arg w "$APPPW" \
   '. + {($p): {email:$a, mail_password:$m, app_password:$w}}' "$CRED" > "$CRED.tmp"
 mv "$CRED.tmp" "$CRED" && chmod 600 "$CRED"
-echo "注册邮箱: $ADDR"                                       # 只打印邮箱，不打印密码
+echo "注册邮箱: $ADDR"
 SH
 ```
 
-浏览器里用该邮箱和 `app_password` 完成注册（密码从凭据文件读进表单，不要回显）后，第二段收信。
-`FROM_HINT` 是发件人或标题里应出现的词，用来避开同一邮箱里的其他邮件；5 分钟没收到就明确失败：
+**第二段：浏览器提交注册后轮询收信（兼容纯文本与纯 HTML 邮件）**
 
 ```bash
 bash <<'SH'
@@ -76,7 +62,7 @@ MAILPW=$(jq -r --arg p "$PERSONA" '.[$p].mail_password' "$CRED")
 TOKEN=$(curl -fsS -X POST "$API/token" -H 'Content-Type: application/json' \
   -d "$(jq -n --arg a "$ADDR" --arg p "$MAILPW" '{address:$a,password:$p}')" | jq -r .token)
 ID=""
-for i in $(seq 1 30); do                                   # 每 10 秒一次，最多 5 分钟
+for i in $(seq 1 30); do
   ID=$(curl -fsS "$API/messages" -H "Authorization: Bearer $TOKEN" | jq -r --arg h "$FROM_HINT" '
     [.["hydra:member"][]
      | select(((.from.address // "") + " " + (.from.name // "") + " " + (.subject // ""))
@@ -86,19 +72,17 @@ for i in $(seq 1 30); do                                   # 每 10 秒一次，
   sleep 10
 done
 if [ -z "$ID" ]; then
-  echo "5 分钟内没有收到含“${FROM_HINT}”的验证邮件——这本身是一条发现，记进报告" >&2; exit 2
+  echo "5 分钟内未收到含 ${FROM_HINT} 的验证邮件，记入报告" >&2; exit 2
 fi
-VERIFY_MAIL="${CRED%.json}-$PERSONA-verify-mail.txt"       # 凭据目录内，远离运行日志和报告
+VERIFY_MAIL="${CRED%.json}-$PERSONA-verify-mail.txt"
 curl -fsS "$API/messages/$ID" -H "Authorization: Bearer $TOKEN" \
-  | jq -r '.text' > "$VERIFY_MAIL"
-echo "已收到，私有邮件文件：$VERIFY_MAIL"
+  | jq -r 'if (.text // "") != "" then .text else ((.html // []) | if type == "array" then join("\n") else tostring end) end' \
+  > "$VERIFY_MAIL"
+echo "已存私有文件（禁打印内容）：$VERIFY_MAIL"
 SH
 ```
 
-从邮件中取出验证链接，在**同一个 persona 的浏览器 session** 里打开（`agent-browser --session <persona> open <链接>`），
-不要用 curl 直接请求——验证后的落地页也是体验的一部分。
+## 3. 验证与清理
 
-邮件本身也要评估：发件人名称是否可信、标题是否说清用途、正文语言是否与注册时一致、链接是否
-可点、有效期是否说明、会不会进垃圾箱（一次性邮箱无法判断这一点，报告中注明）。
-
-收尾：报告附录只写邮箱地址；核验后删除凭据目录中的 `<产品>-<环境>-<persona>-verify-mail.txt`，邮件正文和验证链接不进入运行日志或报告。
+- 在**同一 `--session <persona>` 浏览器页面**里填入 6 位验证码（如 ZenStory `/verify-email`）或打开验证链接，不直接用 `curl` 调接口跳过前端落地页。
+- 顺带评估发件人可信度、标题清晰度、语言一致性与有效期说明（注明一次性邮箱无法测垃圾箱率），验证后立即 `rm -f` 删除 `*-verify-mail.txt`。

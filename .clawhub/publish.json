@@ -18,7 +18,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "afff5787a101be8860370a724cd04fd5a40e6de533a48a94a52f05d3c2d502b3",
+      "packageDigest": "a00660365e27b16688cf174a5f66b9f49bd4736e064b412cd2fa558dc6143152",
       "path": "skills/release-writing",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -34,7 +34,7 @@
         "changelog",
         "semver"
       ],
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     {
       "categories": [
@@ -48,7 +48,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "49f50e88dae7bf42c0fed7d4328ae2bdff0cd945f8e274b8462d20c9fa566703",
+      "packageDigest": "bcc910bd922d222bd7fb257b469b74389718a5b47b199034651df068ab1e3597",
       "path": "skills/new-user-product-audit",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -64,7 +64,7 @@
         "onboarding",
         "user-testing"
       ],
-      "version": "1.0.3"
+      "version": "1.0.4"
     },
     {
       "categories": [
@@ -78,7 +78,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "71b88965628f81430724d263d1d43344a6c24767ff4ac845411048f9dcb05ff9",
+      "packageDigest": "b3153f169961e61a69099527c2a3e763f29f8aaa20ac075a35c79cbd88507ad6",
       "path": "skills/no-black-box",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -94,7 +94,7 @@
         "documentation",
         "knowledge-transfer"
       ],
-      "version": "1.0.2"
+      "version": "1.1.0"
     },
     {
       "categories": [
@@ -108,7 +108,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "03820b8898694438ef505ccc630b6d2297fdc31dc32664dd89660e05a2262521",
+      "packageDigest": "665e76a5907597d8c8b9d9de2578c141ba4e0f45926433fa5e4fb3f1acfd2f3f",
       "path": "skills/prose-gap-polish",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -125,7 +125,38 @@
         "clarity",
         "logic-review"
       ],
-      "version": "1.0.1"
+      "version": "1.0.2"
+    },
+    {
+      "categories": [
+        "agents",
+        "development"
+      ],
+      "displayName": "Skill 精简与重构",
+      "disposition": "publish",
+      "excludeReason": "",
+      "include": [
+        "**/*"
+      ],
+      "maintainer": "worldwonderer",
+      "packageDigest": "2e709c739c640dd277bf5bffba610fbba78b4e706ac3247c02dcc97254fb0dcd",
+      "path": "skills/skill-polish",
+      "publisher": "worldwonderer",
+      "rebuildOn": [],
+      "rights": {
+        "evidence": ".clawhub/README.md#rights",
+        "status": "permission-recorded"
+      },
+      "runtimeDependsOn": [],
+      "slug": "skill-polish",
+      "supportedRuntimes": [],
+      "topics": [
+        "agent-skills",
+        "prompt-engineering",
+        "skill-design",
+        "refactoring"
+      ],
+      "version": "1.0.0"
     }
   ]
 }

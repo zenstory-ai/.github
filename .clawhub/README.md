@@ -1,6 +1,6 @@
 # Shared skill distribution
 
-`publish.json` lists the four organization skills released on ClawHub by
+`publish.json` lists the five organization skills released on ClawHub by
 `worldwonderer`. Every entry starts at `1.0.0` and locks its exact file inventory.
 `you-click-publish` has been removed from the repository and is not a release entry.
 
@@ -42,4 +42,4 @@ first publication. Manual dry runs remain available without credentials.
 Later skill changes require a per-skill version bump, refreshed `packageDigest`,
 and a stable GitHub Release on `main`. Editing drifting `main` alone does not
 replace an already approved release. The anonymous daily audit covers these
-four skills alongside the product skill packs.
+five skills alongside the product skill packs.
