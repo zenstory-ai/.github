@@ -2,7 +2,7 @@
 
 ClawHub is a release channel, not a recursive mirror. Each canonical product repository owns one reviewed `.clawhub/publish.json`; this repository supplies the pinned reusable writer and an anonymous daily audit.
 
-This repository also publishes its own four shared skills through
+This repository also publishes its own five shared skills through
 `.github/workflows/publish-skills.yml` and `.clawhub/publish.json`. The shared
 control scripts and community files are outside every skill package. See
 [the shared-skill release instructions](../.clawhub/README.md) for bootstrap,

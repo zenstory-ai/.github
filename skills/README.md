@@ -10,8 +10,9 @@ belongs in that project's own repository; only cross-repository skills live here
 |---|---|
 | [`release-writing`](release-writing/) | 组织统一的发布写作标准：CHANGELOG 条目、切版本、GitHub release notes |
 | [`new-user-product-audit`](new-user-product-audit/) | 新用户产品诊断：扮演新用户操作真实浏览器试用产品、按内容类型真实创作，产出动线/指引/bug/产出质量诊断报告 |
-| [`no-black-box`](no-black-box/) | 不留黑箱的交接讲解：Agent 独立做完一段工作后，按固定的八步节奏把需求背景、落地方案、验证结果和未决事项讲给使用人，产出一份讲解文档（自己读，也能投屏、转给别人），有需要外部确认或拍板的事项时再加一份确认单，单文件 HTML 或在线文档；每个结论写明出处，源文件配截图 |
+| [`no-black-box`](no-black-box/) | 不留黑箱的交接讲解：Agent 独立完成一段复杂工作后，按五段线性结构把业务背景、材料底账、逐项算账对比、验证结果与待拍板事项讲透，产出一份可自读也可投屏转发的讲解文档，按需配套确认单，并在对话里单独交付沟通口径与内部细节 |
 | [`prose-gap-polish`](prose-gap-polish/) | 文案与方案精修：合并短碎句、去除自造词与防御性赘述、消除歧义，补齐信息断点并修复逻辑断点 |
+| [`skill-polish`](skill-polish/) | Skill 精简与重构：消除跨节跳转与重复板块，收敛碎片参考文件，砍掉低信号说教并回查守住硬性操作约束，清理直译黑话与模板污染，校准门禁脚本与真实代码事实 |
 
 ## 安装 ｜ Install
 
@@ -28,4 +29,4 @@ mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 ln -s "$PWD/skills/release-writing" "${CODEX_HOME:-$HOME/.codex}/skills/release-writing"
 ```
 
-四个共享 skill 的版本、文件清单和发布入口见 [`.clawhub/`](../.clawhub/)。
+五个共享 skill 的版本、文件清单和发布入口见 [`.clawhub/`](../.clawhub/)。

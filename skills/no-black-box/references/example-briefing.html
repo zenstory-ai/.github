@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>门店评分卡修订讲解</title>
 <style>
-/* 虚构示例：项目、人物、材料、数值全部是编的，只用来展示讲解的顺序和版式 */
+/* 虚构示例：项目、人物、材料、数值全部虚构，用于展示五段线性讲解结构与版式 */
 :root {
   --bg: #f5f6f4; --paper: #ffffff; --ink: #1c2321; --muted: #5a6763; --rule: #dde3e0;
   --accent: #1f6b5c; --accent-soft: #e2efeb; --quote-bg: #f6f3ec; --quote-rule: #c9b98f;
-  --warn: #8a5a10; --warn-soft: #f7efdf; --red-text: #c0392b; --code-bg: #eff2f0;
+  --warn: #8a5a10; --warn-soft: #f7efdf; --bad: #9b2c2c; --bad-soft: #f8e6e6;
+  --red-text: #c0392b; --code-bg: #eff2f0;
   --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
   color-scheme: light;
@@ -18,13 +19,15 @@
   :root:not([data-theme="light"]) {
     --bg: #131816; --paper: #1b221f; --ink: #e3eae7; --muted: #98a6a1; --rule: #2d3733;
     --accent: #6cc3ad; --accent-soft: #1e3430; --quote-bg: #26241e; --quote-rule: #7d6f4c;
-    --warn: #e2b76a; --warn-soft: #352b1a; --red-text: #f08a7e; --code-bg: #232b28; color-scheme: dark;
+    --warn: #e2b76a; --warn-soft: #352b1a; --bad: #ef9a9a; --bad-soft: #3a2222;
+    --red-text: #f08a7e; --code-bg: #232b28; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #131816; --paper: #1b221f; --ink: #e3eae7; --muted: #98a6a1; --rule: #2d3733;
   --accent: #6cc3ad; --accent-soft: #1e3430; --quote-bg: #26241e; --quote-rule: #7d6f4c;
-  --warn: #e2b76a; --warn-soft: #352b1a; --red-text: #f08a7e; --code-bg: #232b28; color-scheme: dark;
+  --warn: #e2b76a; --warn-soft: #352b1a; --bad: #ef9a9a; --bad-soft: #3a2222;
+  --red-text: #f08a7e; --code-bg: #232b28; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.75; padding-inline: 16px; padding-block: 28px 64px; }
@@ -41,7 +44,8 @@ h2 .file { font-family: var(--font-mono); font-size: 13px; font-weight: 400; col
 h3 { font-size: 16px; margin: 4px 0 0; }
 p { margin: 0; max-width: 74ch; }
 ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
-code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+pre.f { margin: 0; background: var(--code-bg); border-radius: 6px; padding: 8px 10px; font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .summary { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; }
 .summary > p + p { margin-top: 6px; }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
@@ -59,12 +63,14 @@ code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
 th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--rule); }
 th { color: var(--muted); font-weight: 600; font-size: 13px; white-space: nowrap; }
+td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+td.id { white-space: nowrap; }
 .tag { display: inline-block; font-size: 12px; border-radius: 999px; padding: 0 8px; line-height: 20px; white-space: nowrap; }
 .tag.ok { background: var(--accent-soft); color: var(--accent); }
 .tag.wait { background: var(--warn-soft); color: var(--warn); }
+.tag.no { background: var(--bad-soft); color: var(--bad); }
 .tag.na { background: var(--code-bg); color: var(--muted); }
-.summary .tag.ok, .summary .tag.na { background: var(--paper); }
-td.id { white-space: nowrap; }
+.summary .tag.ok, .summary .tag.wait, .summary .tag.no, .summary .tag.na { background: var(--paper); }
 .muted { color: var(--muted); }
 figure.shot { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 figure.shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
@@ -78,79 +84,46 @@ figcaption { font-size: 13px; color: var(--muted); }
 <main>
 <header>
   <h1>门店评分卡修订讲解</h1>
-  <p>评分卡这一轮修订：每处改动出自哪份材料、算分怎么变、哪些还等顾问回复。标着「原文」的框照录材料，标着「解读」或「例 N」的框是我们的理解和处理。</p>
+  <p>本轮评分卡修订的来龙去脉、算分变化与待确认口径。标着「原文」的框逐字照录材料，标着「解读」或「例 N」的框是我们的理解与处理结果。</p>
 </header>
-<p class="banner">这是一个虚构示例：项目、人物、材料、数值全部是编的，只用来展示讲解的顺序和版式。</p>
+<p class="banner">这是一个虚构示例：项目、人物、材料与数值均为虚构，用于展示五段线性讲解结构与版式。</p>
 
 <nav class="toc" aria-label="目录">
-  <a href="#conclusion">结论</a>
-  <a href="#overview">一页速览</a>
-  <a href="#background">先理解背景</a>
-  <a href="#sources">源文件一览</a>
-  <a href="#m1">① 新版评分表</a>
-  <a href="#m2">② 顾问核对意见</a>
+  <a href="#overview">结论与背景</a>
+  <a href="#m1">① 新版评分表与更新要点</a>
+  <a href="#m2">② 顾问核对意见表</a>
   <a href="#m3">③ 店长试用笔记</a>
   <a href="#release">上线与验证</a>
-  <a href="#confirm">需要顾问确认的事项</a>
-  <a href="#notes">补充说明</a>
-  <a href="#open">未决与待商量</a>
-  <a href="#files">附录：文件清单</a>
+  <a href="#actions">待拍板与后续安排</a>
 </nav>
 
-<section id="conclusion">
-  <h2>结论</h2>
-  <div class="summary">
-    <p>四件事的改动都已上线测试环境（系统 3.2 版）：事项二已完成；事项一、三、四各还有一部分要顾问定（员工人数口径、13 条核对意见、日均客流口径）；另有 17 条新功能需求排进下一版。</p>
-    <p>新提交的评分结果会变（培训扣分、暗访封顶和 1 处舍入），已经出过的报告不受影响。</p>
-    <p>请顾问看确认单上的 5 条（疑问 1、2，待定 1–3），每条回一句意见。</p>
-  </div>
-</section>
-
 <section id="overview">
-  <h2>一页速览</h2>
-  <div class="tablewrap"><table>
-    <thead><tr><th>事项</th><th>来源原话</th><th>结果</th><th>状态</th></tr></thead>
-    <tbody>
-      <tr><td>一、培训不达标，卫生扣分</td><td>「本月完成食品安全培训的员工不到八成的门店，卫生维度扣 10 分」</td><td>完成率不到八成的门店卫生分减 10、总分减 3；员工人数算不算兼职待顾问定</td><td><span class="tag ok">已完成</span> <span class="tag wait">1 条待确认</span></td></tr>
-      <tr><td>二、暗访未通过，服务分封顶</td><td>「神秘顾客暗访未通过的门店，服务维度最高记 60 分」</td><td>暗访未通过的门店服务分最高 60，原本超过 60 的总分随之下降</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>三、顾问核对意见</td><td>86 条意见（原话见下文例子）</td><td>说到分数的 40 条逐条重算：36 条和评分表一致，另 4 条都由同 1 处舍入引起，已改（新评分会变）；其余要改的多是页面文字和单位</td><td><span class="tag ok">47 条已完成</span> <span class="tag wait">13 条待确认</span> <span class="tag na">16 条排进下一版</span> <span class="tag na">10 条不用改</span></td></tr>
-      <tr><td>四、店长试用笔记</td><td>试用时记下的 9 个问题（逐条见下文）</td><td>7 条已改；1 条排进下一版；1 条日均客流口径要顾问定</td><td><span class="tag ok">7 条已完成</span> <span class="tag wait">1 条待确认</span> <span class="tag na">1 条排进下一版</span></td></tr>
-    </tbody>
-  </table></div>
-  <h3>顾问意见按处理状态</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>处理状态</th><th>条数</th><th>含义</th><th>例子</th></tr></thead>
-    <tbody>
-      <tr><td><span class="tag ok">已完成</span></td><td>47</td><td>页面文字、单位已改；1 处舍入已改（顾问有 4 条意见都由它引起）；都已发布到测试环境</td><td class="id">例 1–3</td></tr>
-      <tr><td><span class="tag wait">待顾问确认</span></td><td>13</td><td>评分表本身的问题，合成确认单 3 条（疑问 1、2，待定 3）</td><td class="id">例 4</td></tr>
-      <tr><td><span class="tag na">排进下一版</span></td><td>16</td><td>新功能需求，本轮不做</td><td class="id">例 5</td></tr>
-      <tr><td><span class="tag na">不用改</span></td><td>10</td><td>顾问看的是更早的页面，现在已经是对的</td><td class="id">例 6</td></tr>
-    </tbody>
-  </table></div>
-  <p class="muted">86 条 = 服务 28 + 陈列 17 + 卫生 23 + 效率 18；逐条处理状态见《核对意见跟踪表.xlsx》（位置见附录「文件清单」）。</p>
-</section>
+  <h2>全局结论与背景</h2>
+  <div class="summary">
+    <p>三份输入材料的修订均已发布至测试环境（系统 3.2 版）：① 新增的培训扣分、暗访封顶 2 项规则已生效；② 顾问 86 条核对意见与 ③ 店长 9 条试用反馈合计 95 条中，54 条已改完（47 + 7）、10 条确认无需改动、17 条新功能需求排入下一版（16 + 1）。</p>
+    <p>新提交的问卷评分会随培训扣分、暗访封顶及 1 处客流取整修正而变化；此前已经出过的历史评分报告保持不变。</p>
+    <p>其余 14 条口径疑问（13 + 1）连同 ① 的培训分母口径，归并汇总在《评分卡修订确认单.html》共 5 个问题（疑问 1–2、待定 1–3），请评分顾问按编号回复意见。</p>
+  </div>
 
-<section id="background">
-  <h2>先理解背景：评分怎么算</h2>
-  <div class="summary"><p>总分由服务、陈列、卫生、效率四个维度加权而来，权重 0.4 / 0.2 / 0.3 / 0.1（《门店评分表 v3.xlsx》「汇总」页 B3:E3），这一版没变；每个维度满分 100。店长在系统里填问卷，顾问每季度巡店、安排暗访，两边的结果合起来算分。</p></div>
-</section>
+  <h3>业务怎么运转：门店总分怎么算</h3>
+  <p>门店季度总分由服务、陈列、卫生、效率四个维度加权相加，权重依次为 0.4 / 0.2 / 0.3 / 0.1（《门店评分表 v3.xlsx》「汇总」页 B3:E3，本轮权重未变），每个维度满分 100。日常由店长在店长端填报问卷，评分顾问每季度巡店打分并安排神秘顾客暗访，系统合入两边结果算出总分。</p>
 
-<section id="sources">
-  <h2>源文件一览：3 份材料</h2>
-  <div class="summary"><p>评分表和更新要点定规则；顾问意见和店长反馈是试用测试环境后提的，涉及评分表本身的汇总进确认单。</p></div>
+  <h3>材料与配套文件</h3>
   <div class="tablewrap"><table>
-    <thead><tr><th>文件</th><th>作者</th><th>内容</th><th>用于</th></tr></thead>
+    <thead><tr><th>文件</th><th>来源 / 性质</th><th>对应内容</th><th>存放位置</th></tr></thead>
     <tbody>
-      <tr><td>① 《门店评分表 v3.xlsx》+《v3 更新要点.docx》</td><td>评分顾问</td><td>规则原件</td><td>事项一、二</td></tr>
-      <tr><td>② 《核对意见.xlsx》</td><td>评分顾问</td><td>试用测试环境的评分报告一个月后写的意见</td><td>事项三</td></tr>
-      <tr><td>③ 《店长试用笔记.docx》</td><td>试点门店</td><td>试用店长端填报时遇到的问题</td><td>事项四</td></tr>
+      <tr><td>① 《门店评分表 v3.xlsx》+《v3 更新要点.docx》</td><td>评分顾问 · 规则原件</td><td>新增培训扣分、暗访封顶（见 ①）</td><td>项目共享盘 / 评分卡修订 / 原材料</td></tr>
+      <tr><td>② 《核对意见.xlsx》</td><td>评分顾问 · 测试环境试用一个月后的 86 条意见</td><td>算分重算与页面文字/单位修正（见 ②）</td><td>项目共享盘 / 评分卡修订 / 原材料</td></tr>
+      <tr><td>③ 《店长试用笔记.docx》</td><td>试点门店 · 店长端填报试用的 9 个问题</td><td>填报引导优化与闭店客流口径（见 ③）</td><td>项目共享盘 / 评分卡修订 / 原材料</td></tr>
+      <tr><td>《核对意见跟踪表.xlsx》</td><td>本轮整理 · 86 条意见逐条处理明细</td><td>状态标签、确认单编号与本文一致</td><td>项目共享盘 / 评分卡修订 / 跟踪</td></tr>
+      <tr><td>《评分卡修订确认单.html》</td><td>本轮整理 · 待顾问拍板的 5 条及已处理清单</td><td>疑问 1–2、待定 1–3（汇总见末节）</td><td>项目共享盘 / 评分卡修订 / 确认</td></tr>
     </tbody>
   </table></div>
 </section>
 
 <section id="m1">
-  <h2>① 新版评分表 + 更新要点（事项一、二）<span class="file">门店评分表 v3.xlsx · v3 更新要点.docx</span></h2>
-  <div class="summary"><p>培训不达标扣卫生分、暗访未通过封顶服务分，新提交的评分会因此变化（已出报告不变）；员工人数口径待顾问定（待定 1） <span class="tag ok">已完成</span> <span class="tag wait">1 条待确认</span></p></div>
+  <h2>① 新版评分表与更新要点<span class="file">门店评分表 v3.xlsx · v3 更新要点.docx</span></h2>
+  <div class="summary"><p>新增「食品安全培训不到八成扣卫生分 10 分」与「暗访未通过服务分最高记 60 分」两项规则，均已在测试环境生效；培训分母算不算兼职待顾问确认（待定 1） <span class="tag ok">已完成</span> <span class="tag wait">1 条待确认</span></p></div>
 
   <div class="pair">
     <div class="orig"><span class="label">原文 · 《v3 更新要点.docx》第 1、2 条</span>
@@ -158,23 +131,18 @@ figcaption { font-size: 13px; color: var(--muted); }
     </div>
     <div class="ours"><span class="label">解读</span>
       <ul>
-        <li><b>培训</b>：本月学完食品安全培训的员工要达到八成，不到就从卫生维度扣 10 分。</li>
-        <li><b>暗访封顶</b>：暗访没通过，服务维度不管各题答得多好，最多 60 分。</li>
+        <li><b>培训扣分</b>：当月完成食品安全线上课的员工比例不到 80%，卫生维度扣 10 分。</li>
+        <li><b>暗访封顶</b>：当季神秘顾客暗访未通过，服务维度无论问卷得多少分，最高记 60 分。</li>
       </ul>
     </div>
   </div>
 
-  <h3>培训扣分与暗访封顶</h3>
-
-  <div class="summary"><p>第一处：本月培训完成率不到八成，卫生维度扣 10 分；已在测试环境发布，员工人数口径待顾问定（待定 1） <span class="tag ok">已完成</span> <span class="tag wait">1 条待确认</span></p></div>
   <div class="explain">
-    <h4><span class="idx">一</span>培训不达标，卫生扣分</h4>
+    <h4><span class="idx">一</span>培训不达标，卫生维度扣 10 分</h4>
     <div class="step-t">它是什么</div>
-    <p>卫生维度原来只看顾问巡店时的打分（满分 100）；问卷「卫生」页的拍照题是交给顾问巡店时对照的，本身不计分。食品安全培训是员工每月要上的一节线上课，系统里能查到每人本月有没有学完。</p>
-    <div class="step-t">原文 / 改前</div>
-    <p>原文见上方。改前培训不计分，卫生分就是巡店打分。</p>
-    <div class="step-t">改成了什么</div>
-    <p>新规则只看一个比例：本月学完的人数 ÷ 门店员工人数。</p>
+    <p>卫生维度原本只看顾问巡店打分（满分 100；问卷「卫生」页拍照题仅供巡店核验，本身不计分）。食品安全培训是员工每月必修的一节线上课，培训平台记录每人当月是否学完。</p>
+    <div class="step-t">改前与改后</div>
+    <p>改前培训记录不参与算分；改后按「本月学完人数 ÷ 门店员工人数」判定：</p>
     <div class="tablewrap"><table>
       <thead><tr><th>情形</th><th>改前</th><th>改后</th></tr></thead>
       <tbody>
@@ -183,149 +151,164 @@ figcaption { font-size: 13px; color: var(--muted); }
       </tbody>
     </table></div>
     <div class="step-t">算给你看</div>
-    <p>一家 12 名员工的门店（全职 9、兼职 3），本月学完 9 人（全职 8、兼职 1），巡店打分 88（都是假设）：按人头算 9 ÷ 12 = 75%，不到八成，卫生分 88 − 10 = 78；卫生在总分里占 0.3，总分少 3&nbsp;分。</p>
-    <p>同一家店本月再多学完 1 人（假设）：10 ÷ 12 ≈ 83%，不扣分，卫生分仍是 88，和改前一样。</p>
-    <div class="step-t">边界</div>
+    <p>一家 12 名员工的门店（全职 9、兼职 3），本月学完 9 人（全职 8、兼职 1），巡店打分 88（均为假设）：按总人头算 9 ÷ 12 = 75%，不到八成，卫生分 88 − 10 = 78；卫生占总分权重 0.3，总分少 3&nbsp;分。</p>
+    <p>同一家店若本月多学完 1 人（假设）：10 ÷ 12 ≈ 83%，不扣分，卫生分仍为 88，与改前一致。</p>
+    <div class="step-t">边界与暂行口径</div>
     <ul>
-      <li>正好八成不扣：原文写的是「不到八成」。</li>
-      <li>员工人数算不算兼职，评分表没写。上面那家店如果兼职不计，是 8 ÷ 9 ≈ 89%，就不扣分。暂按人头算，请顾问定（确认单 待定 1）。</li>
+      <li>恰好八成不扣分（原文写明「不到八成」）。</li>
+      <li>员工人数含不含兼职，原表未写。上例若不计兼职则为 8 ÷ 9 ≈ 89%，不触发扣分。顾问回复前暂按总人头（兼职一人算一人）执行，归入确认单 <code>待定 1</code>。</li>
     </ul>
-    <div class="step-t">怎么落地</div>
+    <div class="step-t">落地与核对</div>
     <ul>
-      <li>扣分加在卫生维度的计算里，是否学完以培训平台的记录为准；5 家试点门店 8 月的完成率和培训平台导出的名单逐家核对，一致。</li>
+      <li>扣分已接入卫生维度计算，学完状态读取培训平台记录；抽核 5 家试点门店 8 月完成率，与培训平台导出名单逐家一致。</li>
     </ul>
-    <div class="step-t">影响</div>
-    <p>本月完成率不到八成的门店，新提交的评分里卫生分少 10 分；已经出过的报告不受影响。</p>
-    <div class="step-t">和其他事项的关系</div>
-    <ul><li>员工人数口径进确认单 待定 1；顾问回复前按人头算（见「补充说明」）。</li></ul>
+    <div class="step-t">实际影响</div>
+    <p>本月完成率不到八成的门店，新提交评分的卫生分少 10 分、总分少 3 分；已出历史报告不受影响。</p>
   </div>
 
-  <div class="summary"><p>第二处：暗访未通过的门店服务维度最高 60 分，服务分原本高的店降得多；已在测试环境发布 <span class="tag ok">已完成</span></p></div>
   <div class="explain">
-    <h4><span class="idx">二</span>暗访未通过，服务分封顶</h4>
+    <h4><span class="idx">二</span>暗访未通过，服务维度封顶 60 分</h4>
     <div class="step-t">它是什么</div>
-    <p>神秘顾客暗访是顾问每季度派人扮成顾客到店，按清单记「通过 / 未通过」。总分的权重见「先理解背景」。</p>
-    <div class="step-t">改成了什么</div>
+    <p>神秘顾客暗访是顾问每季度派人扮成顾客到店检查，结果只记「通过 / 未通过」两档。</p>
+    <div class="step-t">改前与改后</div>
     <div class="tablewrap"><table>
       <thead><tr><th>情形</th><th>改前</th><th>改后</th></tr></thead>
       <tbody>
-        <tr><td>暗访未通过</td><td>服务维度按各题得分算</td><td>服务维度超过 60 的记 60</td></tr>
-        <tr><td>暗访通过，或本季没有暗访</td><td>按各题得分算</td><td>不变</td></tr>
+        <tr><td>本季暗访未通过</td><td>服务维度按各题实际得分合计</td><td>服务维度超过 60 分的记为 60 分</td></tr>
+        <tr><td>本季暗访通过，或本季未安排暗访</td><td>按各题实际得分合计</td><td>不变</td></tr>
       </tbody>
     </table></div>
     <div class="step-t">算给你看</div>
-    <p>某店四个维度得 82 / 75 / 70 / 90（假设），本季暗访未通过：改前总分 82×0.4 + 75×0.2 + 70×0.3 + 90×0.1 = 77.8；改后服务记 60，总分 60×0.4 + 75×0.2 + 70×0.3 + 90×0.1 = 69。</p>
-    <p>同一家店如果暗访通过（假设），改前改后都是 77.8，不受影响。</p>
-    <div class="step-t">边界</div>
-    <ul><li>封顶只管服务维度；陈列、卫生、效率照旧。本季没有暗访的门店按通过处理。</li></ul>
-    <div class="step-t">影响</div>
-    <p>新评分里暗访未通过、服务分超过 60 的门店，服务分降到 60，总分随之下降；服务分本来不超过 60 的不变；已出报告不变。</p>
+    <p>某店四个维度原得分为 82 / 75 / 70 / 90（假设），本季暗访未通过：改前总分 82×0.4 + 75×0.2 + 70×0.3 + 90×0.1 = 77.8；改后服务分封顶记 60，总分 60×0.4 + 75×0.2 + 70×0.3 + 90×0.1 = 69（降 8.8 分）。</p>
+    <p>同一家店若暗访通过（假设），改前改后总分均为 77.8，不受影响。</p>
+    <div class="step-t">边界与暂行口径</div>
+    <ul><li>封顶只约束服务维度，陈列、卫生、效率照常计分；本季未安排暗访的门店按通过处理。</li></ul>
+    <div class="step-t">落地与核对</div>
+    <ul><li>封顶逻辑已接入服务维度汇总，暗访结果读取顾问巡店台账；已随 5 家试点门店 8 月问卷一并重算核对一致。</li></ul>
+    <div class="step-t">实际影响</div>
+    <p>新评分中暗访未通过且原服务分高于 60 的门店，服务分降至 60、总分相应下调；原服务分不超过 60 的门店及历史已出报告不受影响。</p>
   </div>
 </section>
 
 <section id="m2">
-  <h2>② 顾问核对意见表（事项三）<span class="file">核对意见.xlsx</span></h2>
-  <div class="summary"><p>86 条都看过：说到分数的 40 条逐条重算，36 条和评分表一致，另 4 条都由同 1 处舍入引起，已改；其余要改的多是页面文字和单位 <span class="tag ok">47 条已完成</span> <span class="tag wait">13 条待确认</span> <span class="tag na">16 条排进下一版</span> <span class="tag na">10 条不用改</span></p></div>
-  <p>它是什么：顾问试用测试环境的评分报告一个月后写下的 86 条意见，有说分数的，有说页面文字和单位的，也有提新功能的。86 条不逐条讲，每个处理状态挑例子。</p>
+  <h2>② 顾问核对意见表<span class="file">核对意见.xlsx</span></h2>
+  <div class="summary"><p>86 条意见全部核查完毕：涉及算分的 22 条逐条重算，18 条与评分表一致，4 条差异均由同 1 处客流提前取整引起（已修正）；其余 43 条已完成项为页面文字与单位修订 <span class="tag ok">47 条已完成</span> <span class="tag wait">13 条待确认</span> <span class="tag na">16 条排进下一版</span> <span class="tag na">10 条不用改</span></p></div>
+  <p>它是什么：顾问试用测试环境评分报告一个月后整理的 86 条反馈（服务 28 + 陈列 17 + 卫生 23 + 效率 18 = 86 条）。全量逐条记录见《核对意见跟踪表.xlsx》，下面按处理状态统计并挑 6 个标杆例子讲清每类做法。</p>
 
-  <h3>例子一览</h3>
+  <h3>按处理状态统计</h3>
   <div class="tablewrap"><table>
-    <thead><tr><th>例</th><th>状态</th><th>位置（《核对意见.xlsx》）</th><th>原话（类别）</th><th>结论</th></tr></thead>
+    <thead><tr><th>处理状态</th><th>条数</th><th>处理含义</th><th>标杆例子</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td><span class="tag ok">已完成</span></td><td>「服务」页第&nbsp;34&nbsp;行</td><td>「投诉响应时长单位不对，应改是小时」（页面）</td><td>计算本来就按小时，错的是页面上的单位，已改</td></tr>
-      <tr><td>2</td><td><span class="tag ok">已完成</span></td><td>「陈列」页第&nbsp;15&nbsp;行</td><td>「主推商品那题系统里的说法不对，应该是视线高度」（页面）</td><td>题目文字还是上一版的，已照 v3 改</td></tr>
-      <tr><td>3</td><td><span class="tag ok">已完成</span></td><td>「效率」页第&nbsp;27&nbsp;行</td><td>「客流 148 人的店被算成了达标」（算分）</td><td>系统先把客流取整到十位再比，确实算错，已改</td></tr>
-      <tr><td>4</td><td><span class="tag wait">待顾问确认</span></td><td>「效率」页第&nbsp;52&nbsp;行</td><td>「高峰时段的排队人数算了两遍」（算分）</td><td>系统和评分表一致，疑似评分表两道排队题的时段重叠（疑问 1）</td></tr>
-      <tr><td>5</td><td><span class="tag na">排进下一版</span></td><td>「效率」页第&nbsp;61&nbsp;行</td><td>「希望能按月导出评分明细」（建议）</td><td>新功能，本轮不做</td></tr>
-      <tr><td>6</td><td><span class="tag na">不用改</span></td><td>「卫生」页第&nbsp;40&nbsp;行</td><td>「拍照题不拍照也能提交」（页面）</td><td>意见附的是更早的页面，现在不拍照提交不了</td></tr>
+      <tr><td><span class="tag ok">已完成</span></td><td class="num">47</td><td>页面文字、单位已修正（43 条）；1 处客流取整过早已修正（顾问 4 条算分意见均由此引起）；均已发布测试环境</td><td class="id">例 1–3</td></tr>
+      <tr><td><span class="tag wait">待顾问确认</span></td><td class="num">13</td><td>涉及评分表原件本身的时段、换算或双商品口径，归并入确认单 3 条（疑问 1–2、待定 3）</td><td class="id">例 4</td></tr>
+      <tr><td><span class="tag na">排进下一版</span></td><td class="num">16</td><td>按月导出报表等新功能需求，本轮不做</td><td class="id">例 5</td></tr>
+      <tr><td><span class="tag na">不用改</span></td><td class="num">10</td><td>顾问截图取自更早页面或算分经复核与原表一致，当前测试环境已是正确行为</td><td class="id">例 6</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>标杆例子一览</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>例号</th><th>状态</th><th>位置（《核对意见.xlsx》）</th><th>原话（原分类）</th><th>一句话结论</th></tr></thead>
+    <tbody>
+      <tr><td class="id">例 1</td><td><span class="tag ok">已完成</span></td><td>「服务」页第&nbsp;14&nbsp;行</td><td>「投诉响应时长单位不对，应改是小时」（页面）</td><td>底层一直按小时算，仅页面单位标签误写为「天」，已改</td></tr>
+      <tr><td class="id">例 2</td><td><span class="tag ok">已完成</span></td><td>「陈列」页第&nbsp;15&nbsp;行</td><td>「主推商品那题系统里的说法不对，应该是视线高度」（页面）</td><td>页面题干沿用了旧版措辞，已按 v3 改为「视线高度」</td></tr>
+      <tr><td class="id">例 3</td><td><span class="tag ok">已完成</span></td><td>「效率」页第&nbsp;8&nbsp;行</td><td>「客流 148 人的店被算成了达标」（算分）</td><td>系统先四舍五入到十位再比 150 线，已改为直接用原值比较</td></tr>
+      <tr><td class="id">例 4</td><td><span class="tag wait">待顾问确认</span></td><td>「效率」页第&nbsp;14&nbsp;行</td><td>「高峰时段的排队人数算了两遍」（算分）</td><td>系统与原表一致，疑似原表两道排队题时段重叠（疑问 1）</td></tr>
+      <tr><td class="id">例 5</td><td><span class="tag na">排进下一版</span></td><td>「效率」页第&nbsp;18&nbsp;行</td><td>「希望能按月导出评分明细」（建议）</td><td>新增月度汇总报表需求，排入下一版</td></tr>
+      <tr><td class="id">例 6</td><td><span class="tag na">不用改</span></td><td>「卫生」页第&nbsp;19&nbsp;行</td><td>「拍照题不拍照也能提交」（页面）</td><td>意见所附为 8 月 12 日旧页面，8 月 20 日起已强制必传照片</td></tr>
     </tbody>
   </table></div>
 
   <div class="pair">
-    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「服务」页第 34 行 B34:C34</span>
+    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「服务」页第 14 行 B14:C14</span>
       <span class="line">投诉响应时长单位不对，应改是小时 | 页面</span>
     </div>
     <div class="ours"><span class="label">例 1</span>
-      <p><b>结论：页面单位标错</b> <span class="tag ok">已完成</span></p>
-      <p>《门店评分表 v3.xlsx》「服务」页 B8 的题目是「投诉响应时长（小时）」。计算本来就按小时；错的只是页面上的单位标签（写成了「天」），改了标签，分数没动。原话里的「应改」是原文的笔误，照录。</p>
+      <p><b>结论：页面单位标签标错</b> <span class="tag ok">已完成</span></p>
+      <p>《门店评分表 v3.xlsx》「服务」页 B8 题干为「投诉响应时长（小时）」。系统算分本来就按小时；错的只是页面展示标签写成了「天」，已改为「小时」，分数不变（原话中「应改」为原件笔误，逐字照录）。</p>
     </div>
   </div>
   <figure class="shot">
-    <div class="ph">（截图位置：评分表「服务」页第 7–9 行）</div>
-    <figcaption>《门店评分表 v3.xlsx》「服务」页第 7–9 行，快速查看渲染；红框是后加的标注，圈出 B8 题目里的单位「小时」</figcaption>
+    <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20680%20142%22%20width%3D%22680%22%20height%3D%22142%22%3E%3Crect%20width%3D%22680%22%20height%3D%22142%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20width%3D%22680%22%20height%3D%2228%22%20fill%3D%22%23eef2f0%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%2228%22%20x2%3D%22680%22%20y2%3D%2228%22%20stroke%3D%22%23cbd5d0%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%2266%22%20x2%3D%22680%22%20y2%3D%2266%22%20stroke%3D%22%23e2e8e5%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22104%22%20x2%3D%22680%22%20y2%3D%22104%22%20stroke%3D%22%23e2e8e5%22%2F%3E%3Cline%20x1%3D%2248%22%20y1%3D%220%22%20x2%3D%2248%22%20y2%3D%22142%22%20stroke%3D%22%23cbd5d0%22%2F%3E%3Cline%20x1%3D%22120%22%20y1%3D%220%22%20x2%3D%22120%22%20y2%3D%22142%22%20stroke%3D%22%23e2e8e5%22%2F%3E%3Cline%20x1%3D%22520%22%20y1%3D%220%22%20x2%3D%22520%22%20y2%3D%22142%22%20stroke%3D%22%23e2e8e5%22%2F%3E%3Cg%20font-family%3D%22PingFang%20SC%2C%20Microsoft%20YaHei%2C%20sans-serif%22%20font-size%3D%2213%22%20fill%3D%22%234a5552%22%3E%3Ctext%20x%3D%2218%22%20y%3D%2219%22%3E%E8%A1%8C%3C%2Ftext%3E%3Ctext%20x%3D%2278%22%20y%3D%2219%22%3EA%3C%2Ftext%3E%3Ctext%20x%3D%22295%22%20y%3D%2219%22%3EB%EF%BC%88%E9%A2%98%E5%B9%B2%EF%BC%89%3C%2Ftext%3E%3Ctext%20x%3D%22572%22%20y%3D%2219%22%3EC%EF%BC%88%E6%BB%A1%E5%88%86%EF%BC%89%3C%2Ftext%3E%3Ctext%20x%3D%2220%22%20y%3D%2252%22%3E7%3C%2Ftext%3E%3Ctext%20x%3D%2264%22%20y%3D%2252%22%20fill%3D%22%231c2321%22%3ES-06%3C%2Ftext%3E%3Ctext%20x%3D%22134%22%20y%3D%2252%22%20fill%3D%22%231c2321%22%3E%E8%BF%8E%E5%AE%BE%E7%A4%BC%E8%B2%8C%E7%94%A8%E8%AF%AD%E8%BE%BE%E6%A0%87%E7%8E%87%EF%BC%88%25%EF%BC%89%3C%2Ftext%3E%3Ctext%20x%3D%22592%22%20y%3D%2252%22%20fill%3D%22%231c2321%22%3E10%3C%2Ftext%3E%3Ctext%20x%3D%2220%22%20y%3D%2290%22%3E8%3C%2Ftext%3E%3Ctext%20x%3D%2264%22%20y%3D%2290%22%20fill%3D%22%231c2321%22%3ES-07%3C%2Ftext%3E%3Ctext%20x%3D%22134%22%20y%3D%2290%22%20fill%3D%22%231c2321%22%3E%E6%8A%95%E8%AF%89%E5%93%8D%E5%BA%94%E6%97%B6%E9%95%BF%EF%BC%88%E5%B0%8F%E6%97%B6%EF%BC%89%3C%2Ftext%3E%3Ctext%20x%3D%22592%22%20y%3D%2290%22%20fill%3D%22%231c2321%22%3E15%3C%2Ftext%3E%3Ctext%20x%3D%2220%22%20y%3D%22128%22%3E9%3C%2Ftext%3E%3Ctext%20x%3D%2264%22%20y%3D%22128%22%20fill%3D%22%231c2321%22%3ES-08%3C%2Ftext%3E%3Ctext%20x%3D%22134%22%20y%3D%22128%22%20fill%3D%22%231c2321%22%3E%E5%AE%A2%E8%AF%89%E5%A4%84%E7%90%86%E5%9B%9E%E8%AE%BF%E7%8E%87%EF%BC%88%25%EF%BC%89%3C%2Ftext%3E%3Ctext%20x%3D%22592%22%20y%3D%22128%22%20fill%3D%22%231c2321%22%3E10%3C%2Ftext%3E%3C%2Fg%3E%3Crect%20x%3D%22128%22%20y%3D%2271%22%20width%3D%22146%22%20height%3D%2227%22%20fill%3D%22none%22%20stroke%3D%22%23d93025%22%20stroke-width%3D%222.2%22%20rx%3D%223%22%2F%3E%3C%2Fsvg%3E" alt="《门店评分表 v3.xlsx》「服务」页第 7–9 行原件预览">
+    <figcaption>《门店评分表 v3.xlsx》「服务」页第 7–9 行原件预览；红框是后加的标注，圈出 B8 题干中的单位「小时」</figcaption>
   </figure>
+
   <div class="pair">
     <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「陈列」页第 15 行 B15:C15</span>
       <span class="line">主推商品那题系统里的说法不对，应该是视线高度 | 页面</span>
     </div>
     <div class="ours"><span class="label">例 2</span>
-      <p><b>结论：题目文字是上一版的</b> <span class="tag ok">已完成</span></p>
-      <p>《门店评分表 v3.xlsx》「陈列」页 B9 的题目是「主推商品是否摆在视线高度（1.2–1.6 米）」，系统里还是上一版的「主推商品是否摆在显眼位置」。计分方式两版一样（答「是」得分），题目已照 v3 改。要求从「显眼」变成「视线高度」，店长之后的答案可能随之变化，这是 v3 本身的改动。</p>
+      <p><b>结论：页面题干未同步 v3 措辞</b> <span class="tag ok">已完成</span></p>
+      <p>《门店评分表 v3.xlsx》「陈列」页 B9 题干为「主推商品是否摆在视线高度（1.2–1.6 米）」，系统此前仍显示旧版「显眼位置」。计分逻辑未变（答「是」得分），题干已同步为 v3 原文；要求收紧为 1.2–1.6 米后，店长后续填报结果可能随之变化，属 v3 规则本身调整。</p>
     </div>
   </div>
+
   <div class="pair">
-    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「效率」页第 27 行 B27:C27</span>
+    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「效率」页第 8 行 B8:C8</span>
       <span class="line">客流 148 人的店被算成了达标 | 算分</span>
     </div>
     <div class="ours"><span class="label">例 3</span>
-      <p><b>结论：系统舍入早了一步</b> <span class="tag ok">已完成</span></p>
-      <p>评分表里日均客流满 150 人，效率维度的「客流达标」题才得分（《门店评分表 v3.xlsx》「效率」页 D6 = 150）。评分表拿原值 148 比，不到 150，不得分；系统先把客流取整到十位（148 → 150），就判成了达标。说到分数的 40 条里，对不上的 4 条都是这同 1 处舍入引起的。已改为用原值比较：新评分里日均客流原值不到 150、取整后到 150 的门店（如 145–149 人），这一题不再得分，效率分会降；顾问指出的 4 条都属这种情况。客流满 150 或取整后仍不到 150 的门店不受影响，已出报告不变。</p>
+      <p><b>结论：系统提前取整到十位导致误判达标</b> <span class="tag ok">已完成</span></p>
+      <p>评分表「效率」页 D6 设定日均客流满 150 人得分。原表拿原值 148 比较判不达标；系统此前先把 148 四舍五入为 150 再比较，误判达标。22 条算分意见里对不上的 4 条均由这同一处取整引起。现已改为直接按原值比较：日均客流 145–149 人的门店新评分不再得该题分，效率分下调；满 150 人或原值不到 145 人的门店及已出报告不受影响。</p>
     </div>
   </div>
+
   <div class="pair">
-    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「效率」页第 52 行 B52:C52</span>
+    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「效率」页第 14 行 B14:C14</span>
       <span class="line">高峰时段的排队人数算了两遍 | 算分</span>
     </div>
     <div class="ours"><span class="label">例 4</span>
-      <p><b>结论：疑似评分表两道排队题的时段重叠</b> <span class="tag wait">待顾问确认</span></p>
-      <p>系统和评分表算的一样。看着不对的是评分表的两道题：《门店评分表 v3.xlsx》「效率」页 B11「高峰时段排队人数」的高峰时段写的是 11:00–14:00、17:00–20:00，B13「午间排队人数」写的是 11:30–13:30，F14 = C11 + C13，午间排队的顾客会被算进两道题。系统暂按评分表现有算法；如果改成高峰那题扣掉 11:30–13:30 这一段、午间排队只在午间那题记一次，午间排队多的门店效率分会变，请顾问确认（确认单 疑问 1）。</p>
+      <p><b>结论：疑似评分表两道排队题时段重叠</b> <span class="tag wait">待顾问确认</span></p>
+      <p>系统算分与评分表公式一致：《门店评分表 v3.xlsx》「效率」页 B11「高峰时段排队人数」写 11:00–14:00 与 17:00–20:00，B13「午间排队人数」写 11:30–13:30，而 F14 = C11 + C13，导致 11:30–13:30 的排队顾客被两题重复计入。顾问回复前暂按原表公式算；若改为 B11 剔除 11:30–13:30 时段，午间排队多的门店效率分会变，已列入确认单 <code>疑问 1</code>。</p>
     </div>
   </div>
+
   <div class="pair">
-    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「效率」页第 61 行 B61:C61</span>
+    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「效率」页第 18 行 B18:C18</span>
       <span class="line">希望能按月导出评分明细 | 建议</span>
     </div>
     <div class="ours"><span class="label">例 5</span>
-      <p><b>结论：新功能</b> <span class="tag na">排进下一版</span></p>
-      <p>现在只能按次导出。按月汇总要加新报表，本轮不做，排进下一版。</p>
+      <p><b>结论：新增月度导出报表需求</b> <span class="tag na">排进下一版</span></p>
+      <p>当前仅支持按单次评分导出，按月汇总需新增报表功能，本轮不做，排入下一版。</p>
     </div>
   </div>
+
   <div class="pair">
-    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「卫生」页第 40 行 B40:C40</span>
+    <div class="orig"><span class="label">原文 · 《核对意见.xlsx》「卫生」页第 19 行 B19:C19</span>
       <span class="line">拍照题不拍照也能提交 | 页面</span>
     </div>
     <div class="ours"><span class="label">例 6</span>
-      <p><b>结论：更早的页面的问题，现在已经是对的</b> <span class="tag na">不用改</span></p>
-      <p>测试环境 8 月 20 日起，拍照题必须上传照片才能提交；这条意见附的截图是 8 月 12 日的页面。9 月 18 日发布后在测试环境（系统 3.2 版）上试过，不拍照提交不了。</p>
+      <p><b>结论：旧页面问题，当前版本已强制上传</b> <span class="tag na">不用改</span></p>
+      <p>测试环境自 8 月 20 日起已限制拍照题必传照片方可提交；该条意见所附截图为 8 月 12 日旧页面。9 月 18 日在测试环境 3.2 版复测确认，未传照片无法提交。</p>
     </div>
   </div>
 </section>
 
 <section id="m3">
-  <h2>③ 店长试用笔记（事项四）<span class="file">店长试用笔记.docx</span></h2>
-  <div class="summary"><p>试点门店试用店长端时记下 9 个问题：7 条已改，1 条排进下一版，1 条日均客流口径交顾问定 <span class="tag ok">7 条已完成</span> <span class="tag wait">1 条待确认</span> <span class="tag na">1 条排进下一版</span></p></div>
-  <p>它是什么：试点门店店长在测试环境试用店长端、填报评分时提的问题。条数不多，逐条列出；只有第 6 条要顾问定，下面单独讲。</p>
+  <h2>③ 店长试用笔记<span class="file">店长试用笔记.docx</span></h2>
+  <div class="summary"><p>试点门店店长试用填报端记下的 9 个问题：7 条界面与文案优化已上线，1 条存草稿需求排进下一版，1 条闭店日均客流分母口径待顾问拍板（待定 2） <span class="tag ok">7 条已完成</span> <span class="tag wait">1 条待确认</span> <span class="tag na">1 条排进下一版</span></p></div>
   <div class="tablewrap"><table>
-    <thead><tr><th>第 N 条</th><th>原话</th><th>处理</th><th>状态</th></tr></thead>
+    <thead><tr><th>条号</th><th>店长原话</th><th>处理结果</th><th>状态</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td>填完一页不知道还剩几页</td><td>页面顶部加进度「第 2 / 4 页」</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>2</td><td>「陈列」页的题目说明有一句没写完</td><td>补全</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>3</td><td>「卫生」页的拍照题没说要拍哪几处</td><td>题目说明补「门头、店内、收银台各拍一张」</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>4</td><td>「效率」这个词店员看不懂</td><td>维度名旁加一句白话说明</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>5</td><td>提交按钮写的是「保存」，不知道交没交</td><td>按钮改成「提交」</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>6</td><td>店里周一闭店，日均客流按营业的天数平均，还是按一周 7 天平均？</td><td>评分表没写口径，交顾问定（见下）</td><td><span class="tag wait">待顾问确认</span></td></tr>
-      <tr><td>7</td><td>「陈列」页第一题的举例写的是去年的活动</td><td>举例换成今年的</td><td><span class="tag ok">已完成</span></td></tr>
-      <tr><td>8</td><td>希望能先存草稿，下次接着填</td><td>新功能，本轮不做</td><td><span class="tag na">排进下一版</span></td></tr>
-      <tr><td>9</td><td>手机上表格太宽，要左右划</td><td>窄屏改成一列显示（只在浏览器的手机尺寸下看过，真机未验证）</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 1 条</td><td>填完一页不知道还剩几页</td><td>页顶新增进度提示「第 2 / 4 页」</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 2 条</td><td>「陈列」页的题目说明有一句没写完</td><td>已对照原表补全</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 3 条</td><td>「卫生」页的拍照题没说要拍哪几处</td><td>题目说明补注「门头、店内、收银台各拍一张」</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 4 条</td><td>「效率」这个词店员看不懂</td><td>维度名旁补充白话说明</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 5 条</td><td>提交按钮写的是「保存」，不知道交没交</td><td>按钮文案改为「提交」</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 6 条</td><td>店里周一闭店，日均客流按营业的天数平均，还是按一周 7 天平均？</td><td>评分表未写分母口径，交顾问拍板（见下方算例，<code>待定 2</code>）</td><td><span class="tag wait">待顾问确认</span></td></tr>
+      <tr><td class="id">第 7 条</td><td>「陈列」页第一题的举例写的是去年的活动</td><td>示例已更新为今年活动</td><td><span class="tag ok">已完成</span></td></tr>
+      <tr><td class="id">第 8 条</td><td>希望能先存草稿，下次接着填</td><td>新功能需求，本轮不做</td><td><span class="tag na">排进下一版</span></td></tr>
+      <tr><td class="id">第 9 条</td><td>手机上表格太宽，要左右划</td><td>窄屏改为单列展示（仅在桌面浏览器手机尺寸下验证，真机未验证）</td><td><span class="tag ok">已完成</span></td></tr>
     </tbody>
   </table></div>
+
   <div class="pair">
     <div class="orig"><span class="label">原文 · 《店长试用笔记.docx》第 6 条</span>
       <span class="line">店里周一闭店，日均客流按营业的天数平均，还是按一周 7 天平均？</span>
     </div>
     <div class="ours"><span class="label">解读</span>
-      <p><b>结论：评分表没写按哪几天平均</b> <span class="tag wait">待顾问确认</span></p>
-      <p>评分表只写了「日均客流」，没写分母。一家周一闭店的门店（假设），一周客流 1015 人：按 6 个营业日平均约 169 人，按 7 天平均 145 人；「客流达标」的线是 150（评分表「效率」页 D6），两种算法一个达标、一个不达标。顾问回复前暂按营业天数算（见「补充说明」），交顾问定（确认单 待定 2）。</p>
+      <p><b>结论：评分表未定义闭店日是否计入分母</b> <span class="tag wait">待顾问确认</span></p>
+      <p>评分表只写「日均客流」，未写分母。假设一家周一闭店的门店全周客流 1015 人：按 6 个营业日平均约 169 人，按 7 天平均为 145 人；对照「效率」页 D6 达标线 150 人，两种算法刚好一达标、一不达标。顾问回复前暂按实际营业天数平均执行，归入确认单 <code>待定 2</code>。</p>
     </div>
   </div>
 </section>
@@ -333,51 +316,33 @@ figcaption { font-size: 13px; color: var(--muted); }
 <section id="release">
   <h2>上线与验证</h2>
   <ul>
-    <li>四件事的改动在 9 月 18 日一起发布到测试环境（系统 3.2 版）。</li>
-    <li>9 月 17 日在 3.2 版的发布候选上，用 5 家试点门店 8 月的真实问卷按新旧两版各算一遍：3 家分数变了，变动都来自培训扣分、暗访封顶和那 1 处舍入；另 2 家改前改后完全相同。此后到发布没有再改动。</li>
-    <li>店长端（填报页面、手机窄屏显示）没有在真机上试过，<b>未验证</b>。</li>
+    <li>本轮全部已改项于 9 月 18 日统一发布至测试环境（系统 3.2 版）。</li>
+    <li>9 月 17 日在 3.2 版发布候选包上，取 5 家试点门店 8 月真实问卷按新旧两版逐家重算比对：3 家分数变化，差值全部来自培训扣分、暗访封顶与客流取整修正三处；其余 2 家改前改后分值完全相同。比对完成后至正式发布未再改动代码。</li>
+    <li>店长端填报流程及第 9 条手机窄屏单列布局仅在桌面浏览器模拟尺寸下检查，尚未在手机真机上实测，<b>真机未验证</b>。</li>
   </ul>
 </section>
 
-<section id="confirm">
-  <h2>需要顾问确认的事项</h2>
-  <p>确认单上请顾问回复的共 5 条，每条一个问题，请在邮件或消息里按编号回复意见（如「待定 1：按人头算」）：「疑问」部分是评分表「效率」页 2 处想请顾问再核一下（疑问 1 是 B11、B13 两道排队题的时段重叠；疑问 2 是 F20 结账等候时长：B17 的题目问的是分钟，F20 = C17 / 60 按秒换算；每处写了系统现在怎么算、建议怎么改）；「待定」部分是 3 个口径问题（待定 1 员工人数算不算兼职、待定 2 日均客流按营业天数还是按自然日平均、待定 3 店里同时有两个主推商品时「视线高度」那题怎么算，出自《核对意见.xlsx》「陈列」页第 12 行，对应评分表「陈列」页 B9）。另有「已处理」部分列出这一轮已改好的意见（含那 1 处舍入），以及不用改、排进下一版的意见（各写了为什么），供顾问知悉，不用回复。确认单是《评分卡修订确认单.html》，位置见附录「文件清单」。</p>
-</section>
+<section id="actions">
+  <h2>待拍板与后续安排</h2>
 
-<section id="notes">
-  <h2>补充说明</h2>
-  <ul>
-    <li><b>员工人数</b>：顾问确认前按人头算，兼职一人算一人。</li>
-    <li><b>日均客流</b>：顾问确认前按营业天数平均。</li>
-    <li><b>主推商品陈列</b>：顾问确认前，店里有两个主推商品的，两个都摆在视线高度才得分。</li>
-    <li><b>已出报告</b>：保持原样；新提交的问卷按新规则算分。</li>
-  </ul>
-</section>
-
-<section id="open">
-  <h2>未决与待商量</h2>
+  <h3>需评分顾问确认事项（共 5 条）</h3>
+  <p>明细见独立文件《评分卡修订确认单.html》（其中「已处理」部分另附本轮已改完、不用改及排入下一版的意见供顾问知悉，无需回复）。以下 5 条请顾问在邮件或消息中按编号回复意见（如「待定 1：按总人头算」）：</p>
   <div class="tablewrap"><table>
-    <thead><tr><th>事项</th><th>说明</th><th>需要谁</th></tr></thead>
+    <thead><tr><th>编号</th><th>事项与出处</th><th>待确认问题或修改建议</th><th>回复前暂行口径</th></tr></thead>
     <tbody>
-      <tr><td>评分表「效率」页两处</td><td>B11、B13 两道排队题时段重叠；F20 把分钟当成秒换算。系统暂按评分表现有算法；确认单 疑问 1、2</td><td class="id">评分顾问</td></tr>
-      <tr><td>员工人数口径</td><td>兼职算不算，暂按人头；确认单 待定 1</td><td class="id">评分顾问</td></tr>
-      <tr><td>日均客流口径</td><td>店长笔记第 6 条，按营业天数还是自然日平均，暂按营业天数；确认单 待定 2</td><td class="id">评分顾问</td></tr>
-      <tr><td>主推商品陈列口径</td><td>《核对意见.xlsx》「陈列」页第 12 行：店里同时有两个主推商品时，「视线高度」那题要两个都摆对才得分，还是摆对一个就算，暂按两个都要摆对；确认单 待定 3</td><td class="id">评分顾问</td></tr>
-      <tr><td>店长端操作说明</td><td>说明里的截图要换成新版页面</td><td class="id">培训负责人</td></tr>
+      <tr><td class="id">疑问 1</td><td>排队时段重叠 · 《门店评分表 v3.xlsx》「效率」页 B11、B13、F14</td><td>疑似 B11 高峰时段（含 11:00–14:00）与 B13 午间时段（11:30–13:30）在 F14 相加时重复计入；建议 B11 剔除 11:30–13:30，请确认</td><td>暂按原表公式计算</td></tr>
+      <tr><td class="id">疑问 2</td><td>结账等候时长换算 · 《门店评分表 v3.xlsx》「效率」页 B17、F20</td><td>疑似单位不一致：B17 题干要求填分钟，而 F20 = C17 / 60 把所填数字再除以 60（折算成了小时，或误当成秒来折算分钟）；建议统一单位，请确认</td><td>暂按原表公式计算</td></tr>
+      <tr><td class="id">待定 1</td><td>培训完成率分母 · 《v3 更新要点.docx》第 1 条</td><td>门店员工人数是否包含兼职员工？</td><td>暂按总人头算（兼职一人算一人）</td></tr>
+      <tr><td class="id">待定 2</td><td>日均客流分母 · 《店长试用笔记.docx》第 6 条</td><td>有固定闭店日的门店，日均客流按实际营业天数还是按自然日 7 天平均？</td><td>暂按实际营业天数平均</td></tr>
+      <tr><td class="id">待定 3</td><td>双主推商品判定 · 《核对意见.xlsx》「陈列」页第 12 行（对应评分表「陈列」页 B9）</td><td>门店同时有两个主推商品时，「摆在视线高度」需两个都达标才得分，还是摆对一个即得分？</td><td>暂按两个都摆在视线高度才得分</td></tr>
     </tbody>
   </table></div>
-</section>
 
-<section id="files">
-  <h2>附录：文件清单</h2>
+  <h3>内部待办</h3>
   <div class="tablewrap"><table>
-    <thead><tr><th>文件</th><th>是什么</th><th>位置</th></tr></thead>
+    <thead><tr><th>事项</th><th>说明</th><th>负责人</th></tr></thead>
     <tbody>
-      <tr><td>《门店评分表 v3.xlsx》《v3 更新要点.docx》</td><td>材料 ①：新版评分方法</td><td>项目共享盘 / 评分卡修订 / 原材料</td></tr>
-      <tr><td>《核对意见.xlsx》</td><td>材料 ②：顾问 86 条核对意见原件</td><td>项目共享盘 / 评分卡修订 / 原材料</td></tr>
-      <tr><td>《店长试用笔记.docx》</td><td>材料 ③：试点门店试用反馈</td><td>项目共享盘 / 评分卡修订 / 原材料</td></tr>
-      <tr><td>《核对意见跟踪表.xlsx》</td><td>86 条逐条处理状态，状态和确认单编号与本文一致</td><td>项目共享盘 / 评分卡修订 / 跟踪</td></tr>
-      <tr><td>《评分卡修订确认单.html》</td><td>请顾问回复的 5 条（疑问 1、2，待定 1–3），另列已处理的意见</td><td>项目共享盘 / 评分卡修订 / 确认</td></tr>
+      <tr><td>更新店长端操作说明</td><td>将操作手册里的旧版填报截图替换为 3.2 版新页面截图</td><td class="id">培训负责人</td></tr>
     </tbody>
   </table></div>
 </section>
