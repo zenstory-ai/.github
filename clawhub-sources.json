@@ -306,6 +306,12 @@
       "slug": "prose-gap-polish",
       "repository": "zenstory-ai/.github",
       "path": "skills/prose-gap-polish"
+    },
+    {
+      "publisher": "worldwonderer",
+      "slug": "skill-polish",
+      "repository": "zenstory-ai/.github",
+      "path": "skills/skill-polish"
     }
   ]
 }
