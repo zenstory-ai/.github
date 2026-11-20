@@ -30,7 +30,7 @@ vc env run -- sh -c \
   sh https://app-preview.zenstory.ai novelist
 ```
 
-随后在同一 `--session <persona>` 下继续后续命令；若中途令牌过期重回拦截页，重新执行上式刷新即可。
+随后在同一 `--session <persona>` 下继续后续命令；若中途令牌过期重回拦截页，重新执行上面的命令刷新即可。
 
 ---
 

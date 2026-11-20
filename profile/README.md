@@ -11,16 +11,16 @@
 
 Pick a project based on your starting material and what you want to make. Skill packs run in Claude Code, Codex, and other agent tools, with Oh Story DSH built for DeepSeek Harness; to write directly in the browser, open [ZenStory Workbench](https://app.zenstory.ai).
 
-按手头素材和目标作品选择下方项目：各技能包可在 Claude Code、Codex 等 Agent 工具中使用，DeepSeek Harness 用户可选 Oh Story DSH；想直接在浏览器里写小说，可打开 [ZenStory 工作台](https://app.zenstory.ai)。
+按手头素材和目标作品选择下方项目：各技能包可在 Claude Code、Codex 等 Agent 工具中使用，DeepSeek Harness 用户可选 Oh Story DSH；想直接在浏览器里写小说或短剧，可打开 [ZenStory 工作台](https://app.zenstory.ai)。
 
 ## Start with what you want to make ｜ 从目标开始
 
 | I want to… ｜ 我想要… | Start here ｜ 从这里开始 | Format ｜ 形态 |
 | --- | --- | --- |
-| Write and organize a novel through conversation ｜ 在可视化工作台中对话写小说 | [**ZenStory**](https://zenstory.ai/workbench) · [中文](https://zenstory.ai/zh/workbench) · [source](https://github.com/zenstory-ai/zenstory) | Web workbench |
+| Write and organize novels or short dramas through conversation ｜ 在可视化工作台中对话写小说与短剧 | [**ZenStory**](https://zenstory.ai/workbench) · [中文](https://zenstory.ai/zh/workbench) · [source](https://github.com/zenstory-ai/zenstory) | Web workbench |
 | Research, outline, draft, revise, and create covers with an agent ｜ 用 Agent 完成长短篇网文全流程 | [**Oh Story**](https://zenstory.ai/oh-story) · [中文](https://zenstory.ai/zh/oh-story) · [source](https://github.com/zenstory-ai/oh-story-claudecode) | Agent skill pack |
 | Produce short dramas or motion comics ｜ 创作短剧与漫剧 | [**Drama Skills**](https://zenstory.ai/drama-skills) · [中文](https://zenstory.ai/zh/drama-skills) · [source](https://github.com/zenstory-ai/drama-skills) | Production skill suite |
-| Use story workflows in DeepSeek Harness ｜ 在 DeepSeek Harness 中完成小说创作 | [**Oh Story DSH**](https://zenstory.ai/dsh) · [中文](https://zenstory.ai/zh/dsh) · [source](https://github.com/zenstory-ai/oh-story-dsh) | Community DSH plugin |
+| Use visual workbenches for novels, short dramas, games, and video recaps in DeepSeek Harness ｜ 在 DeepSeek Harness 中用可视化工作台做小说、短剧、游戏与视频解说 | [**Oh Story DSH**](https://zenstory.ai/dsh) · [中文](https://zenstory.ai/zh/dsh) · [source](https://github.com/zenstory-ai/oh-story-dsh) | Community DSH plugin |
 | Turn a novel into a playable game ｜ 把小说改编成可玩游戏 | [**Novel to Game**](https://zenstory.ai/novel-to-game) · [中文](https://zenstory.ai/zh/novel-to-game) · [source](https://github.com/zenstory-ai/novel-to-game) | Adaptation skill pack |
 | Turn a video into a narrated Chinese recap ｜ 把视频做成中文解说成片 | [**Video Recap Skills**](https://zenstory.ai/video-recap) · [中文](https://zenstory.ai/zh/video-recap) · [source](https://github.com/zenstory-ai/video-recap-skills) | Video workflow |
 
