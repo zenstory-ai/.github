@@ -5,7 +5,7 @@ the repository closest to the problem helps the right maintainers find it.
 
 请在问题所属项目的 Issue 或 Discussions 中反馈，并尽量提供版本、环境、复现步骤和最小示例。
 
-## Where to ask
+## Where to ask ｜ 在哪里提问
 
 - **Reproducible bug ｜ 可复现缺陷** — open a bug report in the affected repository.
 - **Feature idea ｜ 功能建议** — open a feature request and describe the user problem.

@@ -48,7 +48,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "bcc910bd922d222bd7fb257b469b74389718a5b47b199034651df068ab1e3597",
+      "packageDigest": "afcd1faa3b445d913df504c5e4a4db2a630f85215f921e8203ae86b91d54c352",
       "path": "skills/new-user-product-audit",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -64,7 +64,7 @@
         "onboarding",
         "user-testing"
       ],
-      "version": "1.0.4"
+      "version": "1.0.5"
     },
     {
       "categories": [
@@ -78,7 +78,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "b3153f169961e61a69099527c2a3e763f29f8aaa20ac075a35c79cbd88507ad6",
+      "packageDigest": "a6b802c5a02bc75b5bc3d7970d118e7cf73200b9ff000081c915ea5f41a63bc8",
       "path": "skills/no-black-box",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -94,7 +94,7 @@
         "documentation",
         "knowledge-transfer"
       ],
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     {
       "categories": [
@@ -108,7 +108,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "665e76a5907597d8c8b9d9de2578c141ba4e0f45926433fa5e4fb3f1acfd2f3f",
+      "packageDigest": "7ed9f74de9440f1c043a95cb2b49bb12f7b65b5ffe163579ace456bb8fbd21c1",
       "path": "skills/prose-gap-polish",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -125,7 +125,7 @@
         "clarity",
         "logic-review"
       ],
-      "version": "1.0.2"
+      "version": "1.0.3"
     },
     {
       "categories": [
@@ -139,7 +139,7 @@
         "**/*"
       ],
       "maintainer": "worldwonderer",
-      "packageDigest": "2e709c739c640dd277bf5bffba610fbba78b4e706ac3247c02dcc97254fb0dcd",
+      "packageDigest": "0009abd2b82faf752d631b92f029c9b3ee3304712fc56c4688f1de72d4001c15",
       "path": "skills/skill-polish",
       "publisher": "worldwonderer",
       "rebuildOn": [],
@@ -156,7 +156,7 @@
         "skill-design",
         "refactoring"
       ],
-      "version": "1.0.0"
+      "version": "1.0.1"
     }
   ]
 }
