@@ -131,7 +131,8 @@ jobs:
           if [[ -n "$BASE_REF" ]]; then args+=(--base-ref "$BASE_REF"); fi
           "${args[@]}"
 
-      - name: Plan against public ClawHub state
+      - id: plan
+        name: Plan against public ClawHub state
         if: ${{ inputs.mode != 'validate' }}
         env:
           MANIFEST_PATH: ${{ inputs.manifest_path }}
@@ -141,7 +142,7 @@ jobs:
           python3 control/scripts/clawhub_release.py plan --manifest "policy/$MANIFEST_PATH" --repo-root source --output clawhub-plan.json --clawhub-bin "$(command -v clawhub)"
 
       - name: Publish exact plan
-        if: ${{ !inputs.dry_run && inputs.mode != 'validate' }}
+        if: ${{ !inputs.dry_run && inputs.mode != 'validate' && steps.plan.outputs.has_work == 'true' }}
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
           CLAWHUB_CONFIG_PATH: ${{ runner.temp }}/clawhub-writer-config.json
@@ -161,7 +162,7 @@ jobs:
           python3 control/scripts/clawhub_release.py publish --manifest "policy/$MANIFEST_PATH" --repo-root source --plan clawhub-plan.json --report clawhub-report.json --clawhub-bin "$(command -v clawhub)"
 
       - name: Verify public packages and isolated companion closure
-        if: ${{ !inputs.dry_run && inputs.mode != 'validate' }}
+        if: ${{ !inputs.dry_run && inputs.mode != 'validate' && steps.plan.outputs.has_work == 'true' }}
         env:
           MANIFEST_PATH: ${{ inputs.manifest_path }}
         run: python3 control/scripts/clawhub_release.py verify --manifest "policy/$MANIFEST_PATH" --repo-root source --report clawhub-verify.json --clawhub-bin "$(command -v clawhub)"
@@ -186,6 +187,7 @@ jobs:
           SUMMARY_SOURCE: ${{ inputs.source_ref }}
           SUMMARY_MODE: ${{ inputs.mode }}
           SUMMARY_DRY_RUN: ${{ inputs.dry_run }}
+          SUMMARY_HAS_WORK: ${{ steps.plan.outputs.has_work }}
         run: |
           {
             echo '## ClawHub distribution'
@@ -193,4 +195,10 @@ jobs:
             echo "- source: \`$SUMMARY_SOURCE\`"
             echo "- mode: \`$SUMMARY_MODE\`"
             echo "- dry run: \`$SUMMARY_DRY_RUN\`"
+            if [[ -n "$SUMMARY_HAS_WORK" ]]; then
+              echo "- has work: \`$SUMMARY_HAS_WORK\`"
+              if [[ "$SUMMARY_HAS_WORK" == 'false' && "$SUMMARY_DRY_RUN" != 'true' ]]; then
+                echo '- result: no-op (all publishable skills already verified; publish and verify skipped)'
+              fi
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

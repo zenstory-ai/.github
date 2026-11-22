@@ -202,4 +202,52 @@ class Tests(unittest.TestCase):
   reg.v["version"]["files"].pop();del self.m["skills"][0]["packageDigest"]
   with mock.patch.object(r,"fetch",side_effect=fetched),mock.patch.object(r,"fetch_text",return_value=caller):out=r.audit(cp,reg)
   self.assertEqual("POLICY_DRIFT",out["findings"][0]["status"])
+ def test_plan_has_work_and_github_output_short_circuit(self):
+  manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m))
+  plan_out=self.root/"plan-noop.json";gh_out=self.root/"gh-out-noop.txt";err=io.StringIO()
+  with mock.patch.object(r,"Registry",return_value=self.public_remote()),mock.patch.dict(r.os.environ,{"GITHUB_OUTPUT":str(gh_out)}),mock.patch("sys.stderr",err):
+   code=r.main(["plan","--manifest",str(manifest),"--repo-root",str(self.root),"--output",str(plan_out)])
+  self.assertEqual(0,code);self.assertFalse(json.loads(plan_out.read_text())["hasWork"]);self.assertIn("has_work=false",gh_out.read_text())
+  self.assertFalse(r.plan_has_work({"skills":[{"disposition":"publish","remote":{"status":"DEPENDENCY_PUBLIC_VERIFIED"}},{"disposition":"excluded"}]}))
+  plan_work=self.root/"plan-work.json";gh_out_work=self.root/"gh-out-work.txt"
+  with mock.patch.object(r,"Registry",return_value=Remote()),mock.patch.dict(r.os.environ,{"GITHUB_OUTPUT":str(gh_out_work)}):
+   code=r.main(["plan","--manifest",str(manifest),"--repo-root",str(self.root),"--output",str(plan_work)])
+  self.assertEqual(0,code);self.assertTrue(json.loads(plan_work.read_text())["hasWork"]);self.assertIn("has_work=true",gh_out_work.read_text())
+  for status in ("MISSING","PENDING_REVIEW","UNKNOWN","BLOCKED_DEPENDENCY","CONTENT_CONFLICT"):
+   with self.subTest(status=status):self.assertTrue(r.plan_has_work({"skills":[{"disposition":"publish","remote":{"status":status}}]}))
+ def test_plan_blocker_exit_2_reports_slug_and_summary(self):
+  manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m))
+  reg=self.public_remote({"security":{"status":"malicious","hasScanResult":True}})
+  plan_out=self.root/"plan-blocked.json";gh_out=self.root/"gh-out-blocked.txt";summary=self.root/"summary.md";err=io.StringIO()
+  with mock.patch.object(r,"Registry",return_value=reg),mock.patch.dict(r.os.environ,{"GITHUB_OUTPUT":str(gh_out),"GITHUB_STEP_SUMMARY":str(summary)}),mock.patch("sys.stderr",err):
+   code=r.main(["plan","--manifest",str(manifest),"--repo-root",str(self.root),"--output",str(plan_out)])
+  self.assertEqual(2,code);self.assertIn("has_work=true",gh_out.read_text())
+  for text in (err.getvalue(),summary.read_text()):
+   self.assertIn("worldwonderer/a",text);self.assertIn("BLOCKED_MODERATION",text);self.assertIn("malicious",text)
+ def test_publish_and_verify_exit_2_report_failing_skill_and_summary(self):
+  manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m))
+  s=self.m["skills"][0];fp=r.fingerprint(r.package(self.root,s))
+  plan={"schemaVersion":1,"repository":self.m["repository"],"sourceSha":"a"*40,"policySha":None,"workflowSha":None,"manifestDigest":"m","cliVersion":r.CLI_VERSION,"skills":[{**s,"artifactDigest":fp}]}
+  pp=self.root/"plan.json";pp.write_text(json.dumps(plan));rp=self.root/"publish-report.json";summary=self.root/"publish-summary.md";err=io.StringIO()
+  with mock.patch.object(r,"Registry",return_value=Remote()),mock.patch.object(r,"check_cli"),mock.patch.object(r,"make_plan",return_value=plan),mock.patch.object(r,"cli",side_effect=r.RemoteError("clawhub command failed: HTTP 500 upstream")),mock.patch.dict(r.os.environ,{"GITHUB_STEP_SUMMARY":str(summary)}),mock.patch("sys.stderr",err):
+   code=r.main(["publish","--manifest",str(manifest),"--repo-root",str(self.root),"--plan",str(pp),"--report",str(rp),"--clawhub-bin","clawhub"])
+  self.assertEqual(2,code)
+  for text in (err.getvalue(),summary.read_text()):
+   self.assertIn("worldwonderer/a",text);self.assertIn("HTTP 500 upstream",text)
+  verify_rp=self.root/"verify-report.json";verify_summary=self.root/"verify-summary.md";verify_err=io.StringIO()
+  reg_pending=self.public_remote({"security":{"status":"scanning","hasScanResult":False}})
+  with mock.patch.object(r,"Registry",return_value=reg_pending),mock.patch.dict(r.os.environ,{"GITHUB_STEP_SUMMARY":str(verify_summary)}),mock.patch("sys.stderr",verify_err):
+   code=r.main(["verify","--manifest",str(manifest),"--repo-root",str(self.root),"--report",str(verify_rp)])
+  self.assertEqual(2,code)
+  for text in (verify_err.getvalue(),verify_summary.read_text()):
+   self.assertIn("worldwonderer/a",text);self.assertIn("PENDING_REVIEW",text);self.assertIn("scanning",text)
+ def test_remote_error_exit_2_writes_stderr_and_step_summary(self):
+  manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m))
+  plan_out=self.root/"plan-err.json";summary=self.root/"err-summary.md";err=io.StringIO()
+  reg=mock.Mock();reg.resolve.side_effect=r.RemoteError("HTTP 503 from ClawHub (/api/v1/resolve)")
+  with mock.patch.object(r,"Registry",return_value=reg),mock.patch.dict(r.os.environ,{"GITHUB_STEP_SUMMARY":str(summary)}),mock.patch("sys.stderr",err):
+   code=r.main(["plan","--manifest",str(manifest),"--repo-root",str(self.root),"--output",str(plan_out)])
+  self.assertEqual(2,code)
+  for text in (err.getvalue(),summary.read_text()):
+   self.assertIn("503",text);self.assertIn("/api/v1/resolve",text)
 if __name__=="__main__":unittest.main()

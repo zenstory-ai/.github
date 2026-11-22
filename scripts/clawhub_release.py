@@ -240,14 +240,14 @@ class Registry:
             except HTTPError as e:
                 try:
                     if e.code==404:return None
-                    if not (e.code==429 or 500<=e.code<=599) or attempt==2:raise RemoteError(f"HTTP {e.code} from ClawHub") from e
+                    if not (e.code==429 or 500<=e.code<=599) or attempt==2:raise RemoteError(f"HTTP {e.code} from ClawHub ({path})") from e
                     delay=self.retry_delay(e.headers,attempt)
                 finally:e.close()
                 time.sleep(delay)
             except (URLError,TimeoutError) as e:
-                if attempt==2:raise RemoteError(f"ClawHub read failed after 3 attempts: {e}") from e
+                if attempt==2:raise RemoteError(f"ClawHub read failed after 3 attempts ({path}): {e}") from e
                 time.sleep(self.retry_delay(None,attempt))
-            except json.JSONDecodeError as e:raise RemoteError(f"ClawHub returned invalid JSON: {e}") from e
+            except json.JSONDecodeError as e:raise RemoteError(f"ClawHub returned invalid JSON ({path}): {e}") from e
         raise AssertionError("unreachable")
     def resolve(self,p,s,h): return self.get("/api/v1/resolve",{"slug":s,"ownerHandle":p,"hash":h})
     def skill(self,p,s): return self.get(f"/api/v1/skills/{s}",{"ownerHandle":p})
@@ -406,10 +406,56 @@ def make_plan(mp,root,reg,bin=None):
         else:item["reason"]=s["excludeReason"]
         items.append(item)
     md=digest(mp.read_bytes());sh=source_commit;workflow_sha=os.getenv("CLAWHUB_WORKFLOW_SHA");policy_sha=os.getenv("CLAWHUB_POLICY_SHA");base={"repository":m["repository"],"sourceSha":sh,"policySha":policy_sha,"workflowSha":workflow_sha,"manifestDigest":md,"cliVersion":CLI_VERSION,"artifacts":[(x["publisher"],x["slug"],x.get("artifactDigest")) for x in items]}
-    return {"schemaVersion":1,"repository":m["repository"],"sourceSha":sh,"policySha":policy_sha,"workflowSha":workflow_sha,"bootstrapSha":m["bootstrapSha"],"manifestDigest":md,"cliVersion":CLI_VERSION,"provenanceDigest":digest(canonical(base)),"skills":items}
+    plan={"schemaVersion":1,"repository":m["repository"],"sourceSha":sh,"policySha":policy_sha,"workflowSha":workflow_sha,"bootstrapSha":m["bootstrapSha"],"manifestDigest":md,"cliVersion":CLI_VERSION,"provenanceDigest":digest(canonical(base)),"skills":items}
+    plan["hasWork"]=plan_has_work(plan)
+    return plan
+VERIFIED_PLAN_STATUSES={"DISTRIBUTION_VERIFIED","DEPENDENCY_PUBLIC_VERIFIED"}
+def plan_has_work(plan):
+    return any(x.get("disposition")=="publish" and x.get("remote",{}).get("status") not in VERIFIED_PLAN_STATUSES for x in plan.get("skills",[]))
 def plan_blockers(plan):
     blocked={"OWNER_MISMATCH","CONTENT_CONFLICT","CONTENT_AT_OTHER_VERSION","REMOTE_AHEAD","POLICY_DRIFT","BLOCKED_MODERATION"}
     return [x for x in plan["skills"] if x.get("disposition")=="publish" and x.get("remote",{}).get("status") in blocked]
+def write_github_output(name,value):
+    output_path=os.getenv("GITHUB_OUTPUT")
+    if output_path:
+        with Path(output_path).open("a",encoding="utf-8") as fh:fh.write(f"{name}={value}\n")
+def write_step_summary(markdown):
+    summary_path=os.getenv("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with Path(summary_path).open("a",encoding="utf-8") as fh:fh.write(markdown.rstrip()+"\n\n")
+def _md_cell(text):
+    return " ".join(str(text).splitlines()).replace("|","\\|").strip()
+def failure_detail(entry,publish_result=None):
+    parts=[]
+    if publish_result:
+        p_status=publish_result.get("status")
+        if publish_result.get("error"):parts.append(f"publish {p_status or 'FAILED'}: {publish_result['error']}")
+        elif p_status and p_status not in {"VERIFIED_NOOP",entry.get("status")}:parts.append(f"publish={p_status}")
+    if entry.get("error"):parts.append(str(entry["error"]))
+    if entry.get("reason"):parts.append(str(entry["reason"]))
+    if entry.get("observedOwner"):parts.append(f"observedOwner={entry['observedOwner']}")
+    if entry.get("metadataDifferences"):parts.append("metadata drift: "+", ".join(entry["metadataDifferences"]))
+    if entry.get("latestVersion") and entry.get("desiredVersion"):parts.append(f"remote={entry['latestVersion']} > desired={entry['desiredVersion']}")
+    elif entry.get("match"):parts.append(f"content already published at {entry['match']}")
+    if entry.get("actualPackageDigest") and entry.get("expectedPackageDigest"):parts.append(f"remote digest {entry['actualPackageDigest'][:12]} != expected {entry['expectedPackageDigest'][:12]}")
+    sec=entry.get("security")
+    if isinstance(sec,dict) and any(sec.get(k) is not None for k in ("status","hasScanResult")):parts.append(f"scan={sec.get('status')} (hasScanResult={sec.get('hasScanResult')})")
+    deps=[d for d in entry.get("dependencies",[]) if d.get("status")!="verified"]
+    if deps:parts.append("unverified dependencies: "+", ".join(f"{d.get('identity')}@{d.get('version')} ({d.get('status')}, scan={d.get('security',{}).get('status')})" for d in deps))
+    closure=entry.get("closure")
+    if isinstance(closure,dict) and closure.get("ok") is False:parts.append(f"closure failed for {closure.get('identity')}@{closure.get('version')}: {closure.get('error')}")
+    return "; ".join(parts) or str(entry.get("status") or "unknown failure")
+def report_failures(command,failures):
+    print(f"error: clawhub {command} failed ({len(failures)} failing skill(s)):",file=sys.stderr)
+    lines=[f"### ClawHub `{command}` failed","","| Skill | Status | Reason |","| --- | --- | --- |"]
+    for item in failures:
+        ident=item["identity"];status=item["status"];reason=item["reason"]
+        print(f"  - {ident} [{status}]: {reason}",file=sys.stderr)
+        lines.append(f"| `{_md_cell(ident)}` | `{_md_cell(status)}` | {_md_cell(reason)} |")
+    write_step_summary("\n".join(lines))
+def report_error(command,message):
+    print(f"error: clawhub {command} failed: {message}",file=sys.stderr)
+    write_step_summary(f"### ClawHub `{command}` failed\n\n- **Error**: `{_md_cell(message)}`")
 def fresh(plan,new):
     for k in ("schemaVersion","repository","sourceSha","policySha","workflowSha","manifestDigest","cliVersion"):
         if plan.get(k)!=new.get(k):raise PolicyError(f"stale plan: {k} changed")
@@ -440,11 +486,17 @@ def do_publish(mp,root,pp,rp,bin,reg):
         if state["status"]=="DEPENDENCY_PUBLIC_VERIFIED":
             closure=install_closure(bin,s,reg);state={**state,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
         ok &= state["status"]=="DISTRIBUTION_VERIFIED";final.append({"identity":f"{s['publisher']}/{s['slug']}",**state})
-    write(rp,{"schemaVersion":1,"repository":new["repository"],"sourceSha":new["sourceSha"],"ok":bool(ok),"results":results,"finalVerification":final,"warnings":scan_warnings(final)});return bool(ok)
+    write(rp,{"schemaVersion":1,"repository":new["repository"],"sourceSha":new["sourceSha"],"ok":bool(ok),"results":results,"finalVerification":final,"warnings":scan_warnings(final)})
+    if not ok:
+        results_by_id={x["identity"]:x for x in results if "identity" in x}
+        failures=[{"identity":item["identity"],"status":item["status"],"reason":failure_detail(item,results_by_id.get(item["identity"]))} for item in final if item.get("status")!="DISTRIBUTION_VERIFIED"]
+        report_failures("publish",failures)
+    return bool(ok)
 def do_verify(mp,root,rp,reg,bin=None):
-    m=read(mp);validate_manifest(m,root);results=[];ok=True;authoritative={}
+    m=read(mp);validate_manifest(m,root);results=[];failures=[];ok=True;authoritative={}
     if bin:authoritative={(x["publisher"],x["slug"]):x.get("artifactDigest") for x in make_plan(mp,root,reg,bin)["skills"]}
     for s in m["skills"]:
+        identity=f"{s['publisher']}/{s['slug']}"
         if s["disposition"]!="publish":r={"status":s["disposition"].upper()}
         else:
             r=inspect(reg,s,authoritative.get((s["publisher"],s["slug"])) or fingerprint(package(root,s)))
@@ -452,9 +504,12 @@ def do_verify(mp,root,rp,reg,bin=None):
                 if bin:
                     closure=install_closure(bin,s,reg);r={**r,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
                 else:r={**r,"status":"DEPENDENCY_CLOSURE_UNVERIFIED","reason":"verify requires --clawhub-bin for same-root companion installation"}
-            ok &= r["status"]=="DISTRIBUTION_VERIFIED"
-        results.append({"identity":f"{s['publisher']}/{s['slug']}",**r})
-    write(rp,{"schemaVersion":1,"repository":m["repository"],"ok":bool(ok),"results":results,"warnings":scan_warnings(results)});return bool(ok)
+            if r["status"]!="DISTRIBUTION_VERIFIED":
+                ok=False;failures.append({"identity":identity,"status":r["status"],"reason":failure_detail(r)})
+        results.append({"identity":identity,**r})
+    write(rp,{"schemaVersion":1,"repository":m["repository"],"ok":bool(ok),"results":results,"warnings":scan_warnings(results)})
+    if not ok:report_failures("verify",failures)
+    return bool(ok)
 
 def fetch(url):
     try:
@@ -537,7 +592,15 @@ def main(argv=None):
         reg=Registry()
         if a.cmd=="plan":
             value=make_plan(a.manifest,a.repo_root.resolve(),reg,a.clawhub_bin);write(a.output,value)
-            if plan_blockers(value):print("error: publish plan contains owner/version/content/policy blockers",file=sys.stderr);return 2
+            blockers=plan_blockers(value)
+            if blockers:
+                write_github_output("has_work","true")
+                failures=[{"identity":f"{x['publisher']}/{x['slug']}","status":x["remote"]["status"],"reason":failure_detail(x["remote"])} for x in blockers]
+                report_failures("plan",failures)
+                return 2
+            has_work=plan_has_work(value)
+            write_github_output("has_work","true" if has_work else "false")
+            if not has_work:print("info: all publishable skills are already verified on ClawHub; no publish/verify work needed",file=sys.stderr)
             return 0
         if a.cmd=="publish":return 0 if do_publish(a.manifest,a.repo_root.resolve(),a.plan,a.report,a.clawhub_bin,reg) else 2
         if a.cmd=="verify":
@@ -549,5 +612,5 @@ def main(argv=None):
             for s in m.get("skills",[]):
                 if s.get("disposition")=="publish":s["packageDigest"]=inventory_digest(package(root,s))
             target=a.output or a.manifest;validate_manifest(m,root);write(target,m);print(json.dumps({"ok":True,"output":str(target)}));return 0
-    except (PolicyError,RemoteError) as e:print("error:",e,file=sys.stderr);return 2
+    except (PolicyError,RemoteError) as e:report_error(a.cmd,str(e));return 2
 if __name__=="__main__":raise SystemExit(main())
