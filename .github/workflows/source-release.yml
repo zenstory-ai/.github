@@ -40,11 +40,19 @@ jobs:
       archive_sha256: ${{ steps.package.outputs.archive_sha256 }}
       manifest_sha256: ${{ steps.package.outputs.manifest_sha256 }}
     steps:
+      - name: Verify called reusable workflow matches control_ref
+        env:
+          CONTROL_REF_INPUT: ${{ inputs.control_ref }}
+          JOB_CONTEXT_JSON: ${{ toJSON(job) }}
+        run: |
+          set -euo pipefail
+          [[ "$CONTROL_REF_INPUT" =~ ^[0-9a-f]{40}$ ]] || { echo 'control_ref must be a pinned full SHA' >&2; exit 2; }
+          JOB_WORKFLOW_REF="$(python3 -c 'import json,os; print(json.loads(os.environ["JOB_CONTEXT_JSON"]).get("workflow_ref", ""))')"
+          [[ "$JOB_WORKFLOW_REF" == *"@$CONTROL_REF_INPUT" ]] || { echo 'control_ref does not match called reusable workflow SHA' >&2; exit 2; }
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.sha }}
           path: source
-          fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

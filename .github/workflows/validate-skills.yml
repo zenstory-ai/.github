@@ -9,14 +9,18 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: validate-shared-skills-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate:
     name: Shared skill inventory validation
-    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@4589b4075b9cc63f1b81511e9c6df6e0b6b52ba2
+    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@c584f3caac2f47168781f7165b38200f1bda2350
     with:
       source_ref: ${{ github.event.pull_request.head.sha || github.sha }}
       policy_ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      control_ref: 4589b4075b9cc63f1b81511e9c6df6e0b6b52ba2
+      control_ref: c584f3caac2f47168781f7165b38200f1bda2350
       mode: validate
       manifest_path: .clawhub/publish.json
       dry_run: true

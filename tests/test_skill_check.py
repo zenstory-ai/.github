@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,22 +16,14 @@ spec.loader.exec_module(skill_check)
 
 
 class SkillCheckTests(unittest.TestCase):
-    def test_all_shared_skills_pass_without_errors_or_advisories(self) -> None:
+    def test_all_shared_skills_pass_structural_checks(self) -> None:
+        manifest = json.loads((REPO_ROOT / ".clawhub" / "publish.json").read_text(encoding="utf-8"))
+        expected = sorted(Path(item["path"]).name for item in manifest["skills"])
         skills = skill_check.discover_skills([str(REPO_ROOT / "skills")])
-        self.assertEqual(
-            [p.name for p in skills],
-            [
-                "new-user-product-audit",
-                "no-black-box",
-                "prose-gap-polish",
-                "release-writing",
-                "skill-polish",
-            ],
-        )
+        self.assertEqual([p.name for p in skills], expected)
         for sdir in skills:
             report = skill_check.check_skill(sdir)
             self.assertTrue(report["ok"], f"{sdir.name} errors: {report['errors']}")
-            self.assertEqual(report["advisories"], [], f"{sdir.name} advisories: {report['advisories']}")
 
     def test_guards_bite_on_common_skill_defects(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

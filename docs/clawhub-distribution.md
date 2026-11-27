@@ -15,7 +15,7 @@ The first rollout **does not wait for another release**. `mode: bootstrap` build
 After bootstrap, product callers use:
 
 - `release`: exact commit of an approved stable GitHub release;
-- `reconcile`: every 12 hours, the exact commit of the latest approved stable release;
+- `reconcile`: scheduled (weekly in product callers) or manual `workflow_dispatch`, the exact commit of the latest approved stable release;
 - `validate`: token-free PR/package checks.
 
 All three writer entries share the repository concurrency group and do not cancel a running writer. The central daily audit only reads public data and manages deduplicated issues in `zenstory-ai/.github`.

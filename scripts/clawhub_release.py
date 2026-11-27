@@ -360,7 +360,7 @@ def cli(bin,args,expected,retries=3):
             if not isinstance(parsed["folder"],str) or not parsed["folder"] or not re.fullmatch(r"[0-9a-f]{64}",parsed["fingerprint"]):raise PolicyError("clawhub JSON folder/fingerprint invalid")
             return parsed
         if n+1==retries or not re.search(r"\b(429|50[0-4])\b|timed? out|ECONNRESET",text,re.I):raise RemoteError("clawhub command failed: "+text[:1000])
-        m=re.search(r"Retry-After:\s*(\d+)",text,re.I);time.sleep(float(m.group(1)) if m else 2**n)
+        m=re.search(r"Retry-After:\s*(\d+)",text,re.I);time.sleep(min(float(m.group(1)),30.0) if m else 2**n)
 
 def publish_args(s,remote,directory,source_repo,source_commit,dry=False):
     if not SHA.fullmatch(source_commit or ""):raise PolicyError("publish source commit must be an immutable full SHA")
@@ -465,24 +465,26 @@ def fresh(plan,new):
         for f in ("version","disposition","artifactDigest","packageDigest"):
             if a[key].get(f)!=x.get(f):raise PolicyError(f"stale plan: {key} {f} changed")
 def do_publish(mp,root,pp,rp,bin,reg):
-    check_cli(bin);plan=read(pp);new=make_plan(mp,root,reg,bin);fresh(plan,new);m=read(mp);sm={(x["publisher"],x["slug"]):x for x in m["skills"]};results=[];ok=True
+    check_cli(bin);plan=read(pp);new=make_plan(mp,root,reg,bin);fresh(plan,new);m=read(mp);sm={(x["publisher"],x["slug"]):x for x in m["skills"]};results=[]
+    authoritative={(x["publisher"],x["slug"]):x.get("artifactDigest") for x in new["skills"]}
     for e in new["skills"]:
         key=(e["publisher"],e["slug"]);s=sm[key]
         if e["disposition"]!="publish":results.append({"identity":"/".join(key),"status":e["disposition"].upper()});continue
-        remote=inspect(reg,s,e["artifactDigest"])
-        if remote["status"]=="DISTRIBUTION_VERIFIED":results.append({"identity":"/".join(key),"status":"VERIFIED_NOOP"});continue
-        if remote["status"]!="MISSING":ok=False;results.append({"identity":"/".join(key),**remote});continue
+        remote=e["remote"] if isinstance(e.get("remote"),dict) else inspect(reg,s,e["artifactDigest"])
+        if remote["status"] in VERIFIED_PLAN_STATUSES:results.append({"identity":"/".join(key),"status":"VERIFIED_NOOP"});continue
+        if remote["status"]!="MISSING":results.append({"identity":"/".join(key),**remote});continue
         try:
             fs=package(root,s)
             with tempfile.TemporaryDirectory() as td:stage(fs,Path(td));result=cli(bin,publish_args(s,remote,td,m["repository"],new["sourceSha"]),{"slug":s["slug"],"displayName":s["displayName"],"version":s["version"],"fileCount":len(fs),"fingerprint":e["artifactDigest"]})
             after=inspect(reg,s,e["artifactDigest"]);status=after["status"]
-            if status!="DISTRIBUTION_VERIFIED":ok=False;status="PENDING_PUBLICATION" if result.get("status") in {"submitted","pending-publication"} else status
+            if status not in VERIFIED_PLAN_STATUSES:status="PENDING_PUBLICATION" if result.get("status") in {"submitted","pending-publication"} else status
             results.append({"identity":"/".join(key),"status":status,"cli":result,"remote":after})
-        except Exception as ex:ok=False;results.append({"identity":"/".join(key),"status":"FAILED","error":str(ex)})
+        except Exception as ex:results.append({"identity":"/".join(key),"status":"FAILED","error":str(ex)})
     final=[];ok=True
     for s in m["skills"]:
         if s["disposition"]!="publish":continue
-        state=inspect(reg,s,fingerprint(package(root,s)))
+        fp=authoritative.get((s["publisher"],s["slug"])) or fingerprint(package(root,s))
+        state=inspect(reg,s,fp)
         if state["status"]=="DEPENDENCY_PUBLIC_VERIFIED":
             closure=install_closure(bin,s,reg);state={**state,"status":"DISTRIBUTION_VERIFIED" if closure["ok"] else "DEPENDENCY_CLOSURE_UNVERIFIED","closure":closure}
         ok &= state["status"]=="DISTRIBUTION_VERIFIED";final.append({"identity":f"{s['publisher']}/{s['slug']}",**state})
@@ -492,9 +494,13 @@ def do_publish(mp,root,pp,rp,bin,reg):
         failures=[{"identity":item["identity"],"status":item["status"],"reason":failure_detail(item,results_by_id.get(item["identity"]))} for item in final if item.get("status")!="DISTRIBUTION_VERIFIED"]
         report_failures("publish",failures)
     return bool(ok)
-def do_verify(mp,root,rp,reg,bin=None):
+def do_verify(mp,root,rp,reg,bin=None,plan_path=None):
     m=read(mp);validate_manifest(m,root);results=[];failures=[];ok=True;authoritative={}
-    if bin:authoritative={(x["publisher"],x["slug"]):x.get("artifactDigest") for x in make_plan(mp,root,reg,bin)["skills"]}
+    if plan_path:
+        plan=read(plan_path)
+        if plan.get("repository")==m["repository"]:
+            authoritative={(x["publisher"],x["slug"]):x.get("artifactDigest") for x in plan.get("skills",[]) if x.get("artifactDigest")}
+    if bin and not authoritative:authoritative={(x["publisher"],x["slug"]):x.get("artifactDigest") for x in make_plan(mp,root,reg,bin)["skills"]}
     for s in m["skills"]:
         identity=f"{s['publisher']}/{s['slug']}"
         if s["disposition"]!="publish":r={"status":s["disposition"].upper()}
@@ -512,8 +518,13 @@ def do_verify(mp,root,rp,reg,bin=None):
     return bool(ok)
 
 def fetch(url):
+    headers={"User-Agent":"zenstory-clawhub-audit/1"}
+    if url.startswith("https://api.github.com/"):
+        headers["Accept"]="application/vnd.github+json"
+        tok=os.getenv("GH_TOKEN")
+        if tok:headers["Authorization"]=f"Bearer {tok}"
     try:
-        with urlopen(Request(url,headers={"User-Agent":"zenstory-clawhub-audit/1"}),timeout=20) as r:return json.loads(r.read().decode())
+        with urlopen(Request(url,headers=headers),timeout=20) as r:return json.loads(r.read().decode())
     except Exception as e:raise RemoteError(f"cannot fetch {url}: {e}") from e
 def fetch_text(url):
     try:
@@ -522,7 +533,7 @@ def fetch_text(url):
 def audit(cp,reg):
     c=read(cp)
     if c.get("schemaVersion")!=1 or not isinstance(c.get("repositories"),list):raise PolicyError("invalid catalog")
-    allowed=set(c.get("allowedPublishers",[])); fixed={(x["publisher"],x["slug"]):(x["repository"],x["path"]) for x in c.get("identities",[])}
+    allowed={p.lower() for p in c.get("allowedPublishers",[])}; fixed={(x["publisher"].lower(),x["slug"]):(x["repository"],x["path"]) for x in c.get("identities",[])}
     if len(fixed)!=len(c.get("identities",[])):raise PolicyError("catalog identity ownership is duplicated")
     findings=[];warnings=[];seen={};registered=set();den=exc=verified=unverified=0
     for src in c["repositories"]:
@@ -531,8 +542,8 @@ def audit(cp,reg):
         workflow=src.get("callerWorkflow","")
         try:
             text=fetch_text(f"https://raw.githubusercontent.com/{repo}/main/{workflow}")
-            refs=re.findall(r"^[ \t]*uses:[ \t]*zenstory-ai/\.github/\.github/workflows/clawhub-publish\.yml@([0-9a-f]{40}|ROOT_REPLACE)[ \t]*$",text,re.M)
-            controls=re.findall(r"^[ \t]*control_ref:[ \t]*([0-9a-f]{40}|ROOT_REPLACE)[ \t]*$",text,re.M)
+            refs=re.findall(r"^[ \t]*uses:[ \t]*zenstory-ai/\.github/\.github/workflows/clawhub-publish\.yml@([0-9a-f]{40}|ROOT_REPLACE)[ \t]*(?:#.*)?$",text,re.M)
+            controls=re.findall(r"^[ \t]*control_ref:[ \t]*([0-9a-f]{40}|ROOT_REPLACE)[ \t]*(?:#.*)?$",text,re.M)
             if len(refs)!=1 or len(controls)!=1 or refs[0]!=controls[0] or refs[0]=="ROOT_REPLACE":
                 findings.append({"key":repo+":caller","status":"POLICY_DRIFT","detail":"caller must pin matching reusable/control_ref full SHA and approved CLI policy"})
         except Exception as e:findings.append({"key":repo+":caller","status":"UNKNOWN","detail":str(e)})
@@ -546,7 +557,7 @@ def audit(cp,reg):
             if s.get("disposition")=="excluded":exc+=1;continue
             den+=1
             if s.get("disposition")!="publish":findings.append({"key":label,"status":"BLOCKED","detail":s.get("excludeReason")});continue
-            if s.get("publisher") not in allowed or fixed.get((s.get("publisher"),s.get("slug")))!=(repo,s.get("path")):
+            if key[0] not in allowed or fixed.get(key)!=(repo,s.get("path")):
                 findings.append({"key":label,"status":"POLICY_DRIFT","detail":"identity is not fixed to this repository/path in central catalog"});continue
             try:meta=reg.skill(s["publisher"],s["slug"]);vd=reg.version(s["publisher"],s["slug"],s["version"])
             except RemoteError as e:findings.append({"key":label,"status":"UNKNOWN","detail":str(e)});continue
@@ -563,11 +574,22 @@ def audit(cp,reg):
                 if remote_pkg and remote_pkg!=expected_pkg:findings.append({"key":label,"status":"CONTENT_CONFLICT","detail":f"remote packageDigest {remote_pkg} differs from expected {expected_pkg}"});continue
                 if scan_blocked(scan):findings.append({"key":label,"status":"BLOCKED_MODERATION","detail":"ClawHub explicitly blocked this version"});continue
                 if scan_accepted(scan) and sec.get("status")=="suspicious":warnings.append({"key":label,"status":"SUSPICIOUS_SCAN","security":{k:sec.get(k) for k in ("status","hasScanResult","hasWarnings")},"detail":"ClawHub suspicious scan accepted as advisory"})
-                if remote_pkg==expected_pkg and scan_accepted(scan):verified+=1;continue
-                if got and scan_accepted(scan):unverified+=1;continue
+                if scan_accepted(scan):
+                    try:deps=dependency_state(reg,s) if s.get("runtimeDependsOn") else []
+                    except RemoteError as e:findings.append({"key":label,"status":"UNKNOWN","detail":str(e)});continue
+                    unverified_deps=[d for d in deps if d["status"]!="verified"]
+                    if unverified_deps:
+                        findings.append({"key":label,"status":"BLOCKED_DEPENDENCY","detail":"unverified dependencies: "+", ".join(f"{d['identity']}@{d['version']}" for d in unverified_deps)});continue
+                    if remote_pkg==expected_pkg:verified+=1;continue
+                    if got:unverified+=1;continue
                 st,detail="UNKNOWN","public version file hashes or aggregate accepted scan unavailable"
             findings.append({"key":label,"status":st,"detail":detail})
-    try: public={x["full_name"] for x in fetch("https://api.github.com/orgs/zenstory-ai/repos?per_page=100&type=public")}
+    try:
+        public=set()
+        for page in range(1,21):
+            batch=fetch(f"https://api.github.com/orgs/zenstory-ai/repos?per_page=100&type=public&page={page}")
+            public.update(x["full_name"] for x in batch)
+            if len(batch)<100:break
     except Exception as e:public=set();findings.append({"key":"zenstory-ai:repository-discovery","status":"UNKNOWN","detail":str(e)})
     for repo in sorted(public-registered):findings.append({"key":repo+":onboarding","status":"POLICY_DRIFT","detail":"public repository unclassified"})
     return {"schemaVersion":1,"generatedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"coverage":{"verified":verified,"unverifiedHealthy":unverified,"denominator":den,"excluded":exc,"percent":100*verified/den if den else 100,"note":"unverifiedHealthy is not counted as verified and does not create an incident without an immutable expected digest"},"findings":findings,"warnings":warnings}
@@ -577,7 +599,7 @@ def parser():
     v=s.add_parser("validate");v.add_argument("--manifest",type=Path,required=True);v.add_argument("--repo-root",type=Path,required=True);v.add_argument("--base-ref");v.add_argument("--clawhub-bin");v.add_argument("--output",type=Path)
     q=s.add_parser("plan");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--output",type=Path,required=True);q.add_argument("--clawhub-bin")
     q=s.add_parser("publish");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--plan",type=Path,required=True);q.add_argument("--report",type=Path,required=True);q.add_argument("--clawhub-bin",required=True)
-    q=s.add_parser("verify");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--report",type=Path,required=True);q.add_argument("--clawhub-bin")
+    q=s.add_parser("verify");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--report",type=Path,required=True);q.add_argument("--clawhub-bin");q.add_argument("--plan",type=Path)
     q=s.add_parser("audit");q.add_argument("--catalog",type=Path,required=True);q.add_argument("--output",type=Path,required=True)
     q=s.add_parser("lock");q.add_argument("--manifest",type=Path,required=True);q.add_argument("--repo-root",type=Path,required=True);q.add_argument("--output",type=Path)
     return p
@@ -605,7 +627,7 @@ def main(argv=None):
         if a.cmd=="publish":return 0 if do_publish(a.manifest,a.repo_root.resolve(),a.plan,a.report,a.clawhub_bin,reg) else 2
         if a.cmd=="verify":
             if a.clawhub_bin:check_cli(a.clawhub_bin)
-            return 0 if do_verify(a.manifest,a.repo_root.resolve(),a.report,reg,a.clawhub_bin) else 2
+            return 0 if do_verify(a.manifest,a.repo_root.resolve(),a.report,reg,a.clawhub_bin,a.plan) else 2
         if a.cmd=="audit":write(a.output,audit(a.catalog,reg));return 0
         if a.cmd=="lock":
             m=read(a.manifest);root=a.repo_root.resolve()
