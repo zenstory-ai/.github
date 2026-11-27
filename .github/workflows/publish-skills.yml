@@ -25,8 +25,6 @@ on:
 
 permissions:
   contents: read
-  checks: read
-  actions: read
 
 concurrency:
   group: clawhub-writer-${{ github.repository }}
@@ -37,8 +35,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (vars.CLAWHUB_AUTO_PUBLISH == 'true' &&
-       (github.event_name != 'release' ||
-        (github.event.release.draft == false && github.event.release.prerelease == false)))
+       github.event.release.draft == false && github.event.release.prerelease == false)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -47,7 +44,7 @@ jobs:
       mode: ${{ steps.source.outputs.mode }}
       dry_run: ${{ steps.source.outputs.dry_run }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: Refuse unresolved central workflow reference
@@ -74,6 +71,7 @@ jobs:
           dry_run=false
 
           if [[ "$EVENT_NAME" == release ]]; then
+            [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo '::error::Release publication requires a stable vX.Y.Z tag.'; exit 1; }
             git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
             source_ref=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
             mode=release
@@ -88,7 +86,6 @@ jobs:
             [[ $(jq -r '.tag_name' <<< "$release_json") == "$REQUESTED_RELEASE_TAG" ]] || exit 1
             [[ $(jq -r '.draft' <<< "$release_json") == false && $(jq -r '.prerelease' <<< "$release_json") == false ]] || { echo '::error::ClawHub handoff requires the exact stable published release.'; exit 1; }
             source_ref=$REQUESTED_SOURCE_SHA
-            RELEASE_TAG=$REQUESTED_RELEASE_TAG
             mode=release
             dry_run=false
           elif [[ "$EVENT_NAME" == workflow_dispatch && "$REQUESTED_MODE" == bootstrap ]]; then
@@ -96,7 +93,7 @@ jobs:
             mode=bootstrap
             dry_run=$REQUESTED_DRY_RUN
           else
-            releases=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100")
+            releases=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --slurp | jq 'add')
             latest_tag=$(jq -r '[.[] | select(.draft == false and .prerelease == false)] | sort_by(.published_at) | last | .tag_name // empty' <<< "$releases")
             if [[ -n "$latest_tag" ]]; then
               git fetch --force origin "refs/tags/$latest_tag:refs/tags/$latest_tag"
@@ -104,7 +101,9 @@ jobs:
             else
               source_ref=$bootstrap_sha
             fi
-            [[ "$EVENT_NAME" == workflow_dispatch ]] && dry_run=$REQUESTED_DRY_RUN
+            if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+              dry_run=$REQUESTED_DRY_RUN
+            fi
           fi
 
           # A pre-rollout release must never replace a newer approved bootstrap.
@@ -130,6 +129,10 @@ jobs:
           else
             [[ "$source_ref" == "$bootstrap_sha" ]] || { echo '::error::Stable source has no publication policy.'; exit 1; }
             policy_ref=$(git rev-parse HEAD)
+            git merge-base --is-ancestor "$policy_ref" origin/main || {
+              echo '::error::Bootstrap policy ref is not on the canonical main history.'
+              exit 1
+            }
             mode=bootstrap
           fi
           [[ "$policy_ref" =~ ^[0-9a-f]{40}$ ]] || exit 1
@@ -144,11 +147,11 @@ jobs:
 
   publish:
     needs: resolve-source
-    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@4589b4075b9cc63f1b81511e9c6df6e0b6b52ba2
+    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@52ed38cf01292aa0f79b3854513457f6ea4c5420
     with:
       source_ref: ${{ needs.resolve-source.outputs.source_ref }}
       policy_ref: ${{ needs.resolve-source.outputs.policy_ref }}
-      control_ref: 4589b4075b9cc63f1b81511e9c6df6e0b6b52ba2
+      control_ref: 52ed38cf01292aa0f79b3854513457f6ea4c5420
       mode: ${{ needs.resolve-source.outputs.mode }}
       manifest_path: .clawhub/publish.json
       dry_run: ${{ needs.resolve-source.outputs.dry_run == 'true' }}

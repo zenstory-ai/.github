@@ -2,6 +2,7 @@
 import hashlib
 import importlib.util
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -16,10 +17,34 @@ S.loader.exec_module(r)
 
 
 class SourceReleaseTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._base_tmp = tempfile.TemporaryDirectory()
+        cls._base_root = Path(cls._base_tmp.name) / "repo"
+        cls._base_root.mkdir()
+        files = {"VERSION": "1.2.3\n", "plugin.json": '{"version":"1.2.3"}\n',
+                 "CHANGELOG.md": "## [Unreleased]\n\n## [1.2.3] - 2026-10-01\n",
+                 "LICENSE": "MIT\n", "skills/a/SKILL.md": "# A\n"}
+        for path, body in files.items():
+            p = cls._base_root / path
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(body)
+        subprocess.run(["git", "init", "-q", str(cls._base_root)], check=True)
+        subprocess.run(["git", "-C", str(cls._base_root), "config", "user.name", "Test"], check=True)
+        subprocess.run(["git", "-C", str(cls._base_root), "config", "user.email", "test@example.invalid"], check=True)
+        subprocess.run(["git", "-C", str(cls._base_root), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(cls._base_root), "commit", "-qm", "fixture"], check=True)
+        cls._base_sha = subprocess.check_output(["git", "-C", str(cls._base_root), "rev-parse", "HEAD"], text=True).strip()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._base_tmp.cleanup()
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name) / "repo"
-        self.root.mkdir()
+        shutil.copytree(self._base_root, self.root)
+        self.sha = self._base_sha
         self.policy = {
             "schemaVersion": 1,
             "repository": "zenstory-ai/drama-skills",
@@ -30,14 +55,6 @@ class SourceReleaseTests(unittest.TestCase):
             "excludePaths": [],
             "ciWorkflows": [{"file": "ci.yml", "jobs": ["tests (py3.10)", "lint and types"]}],
         }
-        files = {"VERSION": "1.2.3\n", "plugin.json": '{"version":"1.2.3"}\n',
-                 "CHANGELOG.md": "## [Unreleased]\n\n## [1.2.3] - 2026-10-01\n",
-                 "LICENSE": "MIT\n", "skills/a/SKILL.md": "# A\n"}
-        for path, body in files.items():
-            p = self.root / path
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(body)
-        self.commit()
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -46,9 +63,6 @@ class SourceReleaseTests(unittest.TestCase):
         return subprocess.check_output(["git", "-C", str(self.root), *args], text=True).strip()
 
     def commit(self):
-        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
-        self.git("config", "user.name", "Test")
-        self.git("config", "user.email", "test@example.invalid")
         self.git("add", ".")
         self.git("commit", "-qm", "fixture")
         self.sha = self.git("rev-parse", "HEAD")
@@ -287,7 +301,8 @@ class SourceReleaseTests(unittest.TestCase):
             self.commit()
 
     def test_workflow_pins_privilege_and_independent_artifact_identity(self):
-        workflow = (P.parents[1] / ".github/workflows/source-release.yml").read_text()
+        raw = (P.parents[1] / ".github/workflows/source-release.yml").read_text()
+        workflow = "\n".join(re.sub(r"#.*$", "", line) for line in raw.splitlines())
         for ref in re.findall(r"uses:\s+(\S+)", workflow):
             self.assertRegex(ref, r"@[0-9a-f]{40}$")
         self.assertIn("artifact-ids: ${{ needs.build.outputs.artifact_id }}", workflow)
@@ -296,6 +311,12 @@ class SourceReleaseTests(unittest.TestCase):
         self.assertEqual(1, workflow.count("contents: write"))
         self.assertNotIn("id-token: write", workflow)
         self.assertNotIn("secrets:", workflow)
+
+    def test_unsafe_is_case_insensitive_and_blocks_keystore(self):
+        from pathlib import PurePosixPath
+        for bad in (".ENV", "certs/SERVER.KEY", "keys/app.KEYSTORE", "NODE_MODULES/a.js"):
+            with self.subTest(bad=bad):
+                self.assertTrue(r.unsafe(PurePosixPath(bad)))
 
     def test_fork_cannot_publish_or_manual_from_topic(self):
         self.assertFalse(r.validate_event("pull_request", "refs/pull/1/merge", False))
@@ -308,8 +329,9 @@ class SourceReleaseTests(unittest.TestCase):
             with self.assertRaises(r.ReleaseError):
                 r.validate_event(event, ref, publish)
 
+    @mock.patch.object(r.time, "sleep")
     @mock.patch.object(r, "urlopen")
-    def test_http_only_404_means_absence(self, urlopen):
+    def test_http_only_404_means_absence(self, urlopen, sleep):
         api = r.GitHub("test-token")
         for code in (401, 403, 429, 500):
             urlopen.side_effect = HTTPError("https://api.github.com/x", code, "error", {}, None)
@@ -317,6 +339,21 @@ class SourceReleaseTests(unittest.TestCase):
                 api.request("/x", missing_ok=True)
         urlopen.side_effect = HTTPError("https://api.github.com/x", 404, "missing", {}, None)
         self.assertIsNone(api.request("/x", missing_ok=True))
+
+    @mock.patch.object(r.time, "sleep")
+    @mock.patch.object(r, "urlopen")
+    def test_github_retries_transient_get_but_not_post(self, urlopen, sleep):
+        api = r.GitHub("test-token")
+        ok = mock.MagicMock()
+        ok.__enter__.return_value.read.return_value = b'{"ok":true}'
+        urlopen.side_effect = [HTTPError("https://api.github.com/x", 503, "down", {}, None), ok]
+        self.assertEqual({"ok": True}, api.request("/x"))
+        self.assertEqual(2, urlopen.call_count)
+        urlopen.reset_mock()
+        urlopen.side_effect = HTTPError("https://api.github.com/x", 503, "down", {}, None)
+        with self.assertRaises(r.ReleaseError):
+            api.request("/x", method="POST", body={"a": 1})
+        self.assertEqual(1, urlopen.call_count)
 
     def test_existing_asset_must_match_exact_bytes(self):
         content = b"asset"

@@ -35,7 +35,7 @@ squashing or rebasing these rollout commits would change the recorded SHA.
 
 Automatic publishing is opt-in: configure a persistent `CLAWHUB_TOKEN` and set
 the repository Actions variable `CLAWHUB_AUTO_PUBLISH=true` to consume stable
-GitHub Releases and reconcile every 12 hours. Leave that variable unset when
+GitHub Releases automatically (reconcile runs via manual `workflow_dispatch`). Leave that variable unset when
 using a temporary key, and remove the temporary repository secret after the
 first publication. Manual dry runs remain available without credentials.
 

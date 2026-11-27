@@ -180,19 +180,34 @@ class GitHub:
         else:
             headers["Content-Type"] = "application/json"
             data = encoded(body) if body is not None else None
-        try:
-            with urlopen(Request(base + path, data=data, headers=headers, method=method), timeout=30) as response:
-                raw = response.read()
-                return json.loads(raw) if raw else None
-        except HTTPError as e:
+        attempts = 3 if method == "GET" else 1
+        for attempt in range(attempts):
             try:
-                if e.code == 404 and missing_ok:
-                    return None
-                raise ReleaseError(f"GitHub {method} failed: HTTP {e.code}") from e
-            finally:
-                e.close()
-        except (URLError, TimeoutError, json.JSONDecodeError) as e:
-            raise ReleaseError("GitHub request/response failed; not evidence of absence") from e
+                with urlopen(Request(base + path, data=data, headers=headers, method=method), timeout=30) as response:
+                    raw = response.read()
+                    return json.loads(raw) if raw else None
+            except HTTPError as e:
+                try:
+                    if e.code == 404 and missing_ok:
+                        return None
+                    if attempt + 1 < attempts and e.code in {429, 500, 502, 503, 504}:
+                        retry_after = e.headers.get("Retry-After") if e.headers else None
+                        try:
+                            delay = min(float(retry_after), 30.0) if retry_after is not None else 2 ** attempt
+                        except ValueError:
+                            delay = 2 ** attempt
+                        time.sleep(delay)
+                        continue
+                    raise ReleaseError(f"GitHub {method} failed: HTTP {e.code}") from e
+                finally:
+                    e.close()
+            except (URLError, TimeoutError) as e:
+                if attempt + 1 < attempts:
+                    time.sleep(2 ** attempt)
+                    continue
+                raise ReleaseError("GitHub request/response failed; not evidence of absence") from e
+            except json.JSONDecodeError as e:
+                raise ReleaseError("GitHub request/response failed; not evidence of absence") from e
 
     def pages(self, path, key=None):
         result = []
@@ -258,7 +273,8 @@ def ci_proof(api, policy, sha, tag=""):
 
 
 def unsafe(path):
-    return any(x in UNSAFE_PARTS for x in path.parts) or path.name in UNSAFE_NAMES or path.suffix in {".pyc", ".pyo", ".pem", ".p12", ".pfx", ".key"}
+    parts = [x.lower() for x in path.parts]
+    return any(x in UNSAFE_PARTS for x in parts) or path.name.lower() in UNSAFE_NAMES or path.suffix.lower() in {".pyc", ".pyo", ".pem", ".p12", ".pfx", ".key", ".keystore"}
 
 
 def validate_links(members, prefix=""):
@@ -307,12 +323,13 @@ def package_source(root, policy, sha, output):
     inventory = []
     tar_bytes = io.BytesIO()
     with tarfile.open(fileobj=io.BytesIO(raw), mode="r:") as source, tarfile.open(fileobj=tar_bytes, mode="w", format=tarfile.PAX_FORMAT) as target:
-        members = [x for x in source.getmembers() if not any(x.name.rstrip("/") == p or x.name.startswith(p + "/") or fnmatch.fnmatchcase(x.name, p) for p in excluded)]
+        def is_excluded(raw_name):
+            norm = raw_name.rstrip("/")
+            return any(norm == p or norm.startswith(p + "/") or fnmatch.fnmatchcase(norm, p) for p in excluded)
+        members = [x for x in source.getmembers() if not is_excluded(x.name)]
         validate_links(members)
         for member in sorted(members, key=lambda x: x.name):
             path = relative(member.name.rstrip("/"))
-            if any(path.as_posix() == x or path.as_posix().startswith(x + "/") or fnmatch.fnmatchcase(path.as_posix(), x) for x in excluded):
-                continue
             if unsafe(path):
                 raise ReleaseError(f"unsafe tracked archive entry: {path}")
             if not (member.isfile() or member.isdir() or member.issym()):

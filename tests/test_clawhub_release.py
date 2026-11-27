@@ -111,11 +111,36 @@ class Tests(unittest.TestCase):
   run.assert_not_called()
  @mock.patch.object(r.subprocess,"run")
  def test_publish_and_verify_accept_suspicious_companion_closure(self,run):
-  s=self.m["skills"][0];s["runtimeDependsOn"]=["skill:worldwonderer/b@1.2.3"];s["packageDigest"]=r.inventory_digest(r.package(self.root,s));scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}};reg=self.public_remote(scan);fp=r.fingerprint(r.package(self.root,s));manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m));plan={"repository":self.m["repository"],"sourceSha":"a"*40,"skills":[{**s,"artifactDigest":fp}]};pp=self.root/"plan.json";pp.write_text(json.dumps(plan));run.side_effect=self.installed_package
-  with mock.patch.object(r,"check_cli"),mock.patch.object(r,"make_plan",return_value=plan),mock.patch.object(r,"cli") as publish:
-   rp=self.root/"publish-report.json";self.assertTrue(r.do_publish(manifest,self.root,pp,rp,"clawhub",reg));out=json.loads(rp.read_text());self.assertTrue(out["ok"]);self.assertEqual("DISTRIBUTION_VERIFIED",out["finalVerification"][0]["status"]);self.assertEqual("suspicious",out["finalVerification"][0]["security"]["status"]);publish.assert_not_called()
-   rp=self.root/"verify-report.json";self.assertTrue(r.do_verify(manifest,self.root,rp,reg,"clawhub"));out=json.loads(rp.read_text());self.assertTrue(out["ok"]);self.assertEqual("DISTRIBUTION_VERIFIED",out["results"][0]["status"]);self.assertEqual("suspicious",out["results"][0]["security"]["status"]);self.assertTrue(out["results"][0]["closure"]["ok"])
-  self.assertEqual(4,run.call_count);self.assertTrue(all("--force" in call.args[0] for call in run.call_args_list))
+  s=self.m["skills"][0];s["runtimeDependsOn"]=["skill:worldwonderer/b@1.2.3"];s["packageDigest"]=r.inventory_digest(r.package(self.root,s));scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}};reg=self.public_remote(scan);fp=r.fingerprint(r.package(self.root,s));manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m));plan={"repository":self.m["repository"],"sourceSha":"a"*40,"skills":[{**s,"artifactDigest":fp}]};pp=self.root/"plan.json";pp.write_text(json.dumps(plan));run.side_effect=self.installed_package;err=io.StringIO()
+  with mock.patch.object(r,"check_cli"),mock.patch.object(r,"make_plan",return_value=plan),mock.patch.object(r,"cli") as publish,mock.patch("sys.stderr",err):
+   rp=self.root/"publish-report.json";self.assertTrue(r.do_publish(manifest,self.root,pp,rp,"clawhub",reg));out=json.loads(rp.read_text());self.assertTrue(out["ok"]);self.assertEqual("VERIFIED_NOOP",out["results"][0]["status"]);self.assertEqual("DISTRIBUTION_VERIFIED",out["finalVerification"][0]["status"]);self.assertEqual("suspicious",out["finalVerification"][0]["security"]["status"]);publish.assert_not_called()
+   rp=self.root/"verify-report.json";self.assertTrue(r.do_verify(manifest,self.root,rp,reg,"clawhub",pp));out=json.loads(rp.read_text());self.assertTrue(out["ok"]);self.assertEqual("DISTRIBUTION_VERIFIED",out["results"][0]["status"]);self.assertEqual("suspicious",out["results"][0]["security"]["status"]);self.assertTrue(out["results"][0]["closure"]["ok"])
+  self.assertEqual(4,run.call_count);self.assertTrue(all("--force" in call.args[0] for call in run.call_args_list));self.assertIn("::warning::",err.getvalue())
+ def test_do_publish_uses_authoritative_artifact_digest_and_verify_reuses_plan(self):
+  s=self.m["skills"][0];manifest=self.root/"publish.json";manifest.write_text(json.dumps(self.m));auth_fp="d"*64;reg=self.public_remote();seen=[]
+  orig_resolve=reg.resolve
+  def track_resolve(p,slug,h):seen.append(h);return orig_resolve(p,slug,h)
+  reg.resolve=track_resolve;plan={"repository":self.m["repository"],"sourceSha":"a"*40,"skills":[{**s,"artifactDigest":auth_fp,"remote":{"status":"DISTRIBUTION_VERIFIED"}}]};pp=self.root/"plan.json";pp.write_text(json.dumps(plan))
+  with mock.patch.object(r,"check_cli"),mock.patch.object(r,"make_plan",return_value=plan) as mp_mock:
+   self.assertTrue(r.do_publish(manifest,self.root,pp,self.root/"pub.json","clawhub",reg))
+   self.assertEqual([auth_fp],seen)
+   seen.clear();mp_mock.reset_mock()
+   self.assertTrue(r.do_verify(manifest,self.root,self.root/"ver.json",reg,"clawhub",pp))
+   mp_mock.assert_not_called();self.assertEqual([auth_fp],seen)
+ @mock.patch.object(r.time,"sleep")
+ @mock.patch.object(r.subprocess,"run")
+ def test_cli_clamps_retry_after(self,run,sleep):
+  body={"ok":True,"status":"published","slug":"s","displayName":"S","folder":"/tmp/x","version":"1.0.0","latestVersion":None,"fileCount":1,"fingerprint":"a"*64};run.side_effect=[subprocess.CompletedProcess([],1,"","HTTP 429 Retry-After: 999"),subprocess.CompletedProcess([],0,json.dumps(body),"")]
+  self.assertEqual("published",r.cli("c",["x"],{"slug":"s","version":"1.0.0"})["status"]);sleep.assert_called_once_with(30.0)
+ def test_audit_flags_unverified_dependency_and_allows_inline_yaml_comment(self):
+  s=self.m["skills"][0];s["runtimeDependsOn"]=["skill:worldwonderer/b@1.2.3"];s["packageDigest"]=r.inventory_digest(r.package(self.root,s));reg=self.public_remote()
+  reg.scan=lambda p,slug,v:{"security":{"status":"malicious","hasScanResult":True}} if slug=="b" else {"security":{"status":"clean","hasScanResult":True}}
+  out=self.audit_report(reg);self.assertEqual(0,out["coverage"]["verified"]);self.assertEqual("BLOCKED_DEPENDENCY",out["findings"][0]["status"])
+  reg.scan=lambda p,slug,v:{"security":{"status":"clean","hasScanResult":True}};sha="b"*40
+  catalog={"schemaVersion":1,"allowedPublishers":[s["publisher"]],"identities":[{"publisher":s["publisher"],"slug":s["slug"],"repository":self.m["repository"],"path":s["path"]}],"repositories":[{"repository":self.m["repository"],"classification":"canonical-public","manifestUrl":"https://raw.example/manifest","callerWorkflow":".github/workflows/publish-clawhub.yml"}]};cp=self.root/"catalog-comment.json";cp.write_text(json.dumps(catalog))
+  caller=f"    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@{sha} # pinned\n  control_ref: {sha} # matching\n"
+  with mock.patch.object(r,"fetch",side_effect=lambda url:[] if "api.github.com" in url else self.m),mock.patch.object(r,"fetch_text",return_value=caller):out=r.audit(cp,reg)
+  self.assertEqual(1,out["coverage"]["verified"]);self.assertEqual([],out["findings"])
  def test_audit_accepts_suspicious_scan_as_warning_without_incident(self):
   scan={"security":{"status":"suspicious","hasScanResult":True,"hasWarnings":True}};reg=self.public_remote(scan);out=self.audit_report(reg)
   self.assertEqual(1,out["coverage"]["verified"]);self.assertEqual([],out["findings"]);self.assertEqual(1,len(out["warnings"]));self.assertIn("suspicious",json.dumps(out["warnings"]))

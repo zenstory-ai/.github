@@ -18,10 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Run anonymous public audit
+      - name: Run public audit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python3 scripts/clawhub_release.py audit --catalog clawhub-sources.json --output clawhub-audit.json
       - name: Synchronize deduplicated trackers in this repository only
         env:
@@ -33,17 +35,30 @@ jobs:
           report=json.load(open('clawhub-audit.json'))
           prefix='[ClawHub audit] '
           current={prefix+x['key']:x for x in report['findings']}
-          raw=subprocess.run(['gh','issue','list','--repo',os.environ['GH_REPO'],'--state','open','--limit','1000','--json','number,title'],check=True,text=True,capture_output=True).stdout
-          opened={x['title']:x['number'] for x in json.loads(raw) if x['title'].startswith(prefix)}
+          raw=subprocess.run(['gh','issue','list','--repo',os.environ['GH_REPO'],'--state','open','--limit','1000','--json','number,title,body'],check=True,text=True,capture_output=True).stdout
+          opened={}
+          for x in json.loads(raw):
+              if x['title'].startswith(prefix):
+                  opened.setdefault(x['title'],[]).append(x)
+          for title,items in opened.items():
+              items.sort(key=lambda x:x['number'])
           for title,item in current.items():
               body=f"Automated public-data audit finding.\n\n- Status: `{item['status']}`\n- Detail: {item.get('detail','')}\n\nThis tracker is scoped to `zenstory-ai/.github`; the central audit does not publish or modify product repositories."
-              if title in opened: subprocess.run(['gh','issue','edit',str(opened[title]),'--repo',os.environ['GH_REPO'],'--body',body],check=True)
-              else: subprocess.run(['gh','issue','create','--repo',os.environ['GH_REPO'],'--title',title,'--body',body],check=True)
-          for title,number in opened.items():
-              if title not in current: subprocess.run(['gh','issue','close',str(number),'--repo',os.environ['GH_REPO'],'--comment','Recovered in the latest public-data audit.'],check=True)
+              if title in opened:
+                  primary,*dups=opened[title]
+                  if (primary.get('body') or '').strip()!=body.strip():
+                      subprocess.run(['gh','issue','edit',str(primary['number']),'--repo',os.environ['GH_REPO'],'--body',body],check=True)
+                  for dup in dups:
+                      subprocess.run(['gh','issue','close',str(dup['number']),'--repo',os.environ['GH_REPO'],'--comment',f"Duplicate tracker superseded by #{primary['number']}."],check=True)
+              else:
+                  subprocess.run(['gh','issue','create','--repo',os.environ['GH_REPO'],'--title',title,'--body',body],check=True)
+          for title,items in opened.items():
+              if title not in current:
+                  for item in items:
+                      subprocess.run(['gh','issue','close',str(item['number']),'--repo',os.environ['GH_REPO'],'--comment','Recovered in the latest public-data audit.'],check=True)
           PY
       - if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: clawhub-audit-${{ github.run_id }}
           path: clawhub-audit.json
