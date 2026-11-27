@@ -49,18 +49,18 @@ jobs:
           [[ "$CONTROL_REF_INPUT" =~ ^[0-9a-f]{40}$ ]] || { echo 'control_ref must be a pinned full SHA' >&2; exit 2; }
           JOB_WORKFLOW_REF="$(python3 -c 'import json,os; print(json.loads(os.environ["JOB_CONTEXT_JSON"]).get("workflow_ref", ""))')"
           [[ "$JOB_WORKFLOW_REF" == *"@$CONTROL_REF_INPUT" ]] || { echo 'control_ref does not match called reusable workflow SHA' >&2; exit 2; }
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.sha }}
           path: source
           persist-credentials: false
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: zenstory-ai/.github
           ref: ${{ inputs.control_ref }}
           path: controls
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
       - name: Enforce caller event boundary
@@ -111,18 +111,18 @@ jobs:
       actions: read
       checks: read
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.build.outputs.source_sha }}
           path: source
           persist-credentials: false
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: zenstory-ai/.github
           ref: ${{ inputs.control_ref }}
           path: controls
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7

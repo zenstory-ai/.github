@@ -44,7 +44,7 @@ jobs:
       mode: ${{ steps.source.outputs.mode }}
       dry_run: ${{ steps.source.outputs.dry_run }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: Refuse unresolved central workflow reference
@@ -147,11 +147,11 @@ jobs:
 
   publish:
     needs: resolve-source
-    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@c584f3caac2f47168781f7165b38200f1bda2350
+    uses: zenstory-ai/.github/.github/workflows/clawhub-publish.yml@52ed38cf01292aa0f79b3854513457f6ea4c5420
     with:
       source_ref: ${{ needs.resolve-source.outputs.source_ref }}
       policy_ref: ${{ needs.resolve-source.outputs.policy_ref }}
-      control_ref: c584f3caac2f47168781f7165b38200f1bda2350
+      control_ref: 52ed38cf01292aa0f79b3854513457f6ea4c5420
       mode: ${{ needs.resolve-source.outputs.mode }}
       manifest_path: .clawhub/publish.json
       dry_run: ${{ needs.resolve-source.outputs.dry_run == 'true' }}

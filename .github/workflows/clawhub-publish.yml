@@ -61,7 +61,7 @@ jobs:
           echo "POLICY_DIR=$([[ "$POLICY_REF" == "$SOURCE_REF" ]] && echo source || echo policy)" >> "$GITHUB_ENV"
 
       - name: Checkout pinned organization controls
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: zenstory-ai/.github
           ref: ${{ env.CONTROL_REF }}
@@ -69,7 +69,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout immutable product source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.source_ref }}
@@ -79,7 +79,7 @@ jobs:
 
       - name: Checkout immutable reviewed policy manifest
         if: ${{ inputs.policy_ref != inputs.source_ref }}
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.policy_ref }}
